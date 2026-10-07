@@ -57,7 +57,8 @@ def phone_digits(value):
 # Teacher login comes from environment variables, never from the page source.
 TEACHER_USERNAME = (os.environ.get("TEACHER_USERNAME") or "annette").strip().lower()
 TEACHER_NAME = (os.environ.get("TEACHER_NAME") or "Annette").strip()
-TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD") or ""
+# Stripped because the sign-in form trims spaces, and pasted values often carry a trailing space or newline.
+TEACHER_PASSWORD = (os.environ.get("TEACHER_PASSWORD") or "").strip()
 SESSION_DAYS = 30
 MAX_FAILED_LOGINS = 5
 FAILED_LOGIN_WINDOW = 15 * 60
@@ -413,7 +414,15 @@ def serve_portal():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "app": "Annette's Private Lessons Backend"}
+    conn = get_db()
+    teacher_ready = conn.execute("SELECT 1 FROM teachers LIMIT 1").fetchone() is not None
+    conn.close()
+    return {
+        "status": "ok",
+        "app": "Annette's Private Lessons Backend",
+        "teacherSignIn": "ready" if teacher_ready else "not set up: add TEACHER_PASSWORD in Render",
+        "database": "postgres" if USE_POSTGRES else "local file (erased on every Render deploy)",
+    }
 
 @app.post("/api/auth/login")
 def login(payload: LoginPayload):
@@ -439,6 +448,10 @@ def login(payload: LoginPayload):
         conn.close()
         failed_logins.pop(throttle_key, None)
         return {"role": "teacher", "teacherId": teacher["id"], "name": teacher["name"], "token": token}
+
+    if identifier.lower() == TEACHER_USERNAME and not cursor.execute("SELECT 1 FROM teachers LIMIT 1").fetchone():
+        conn.close()
+        raise HTTPException(status_code=503, detail="Teacher sign-in is not set up yet. Add TEACHER_PASSWORD in the Render Environment settings, then redeploy.")
 
     digits = phone_digits(identifier)
     student = None
