@@ -291,6 +291,14 @@ def list_lessons(weekId: Optional[str] = None, studentId: Optional[str] = None):
 
 @app.post("/api/lessons")
 def save_lesson(lesson: LessonPayload):
+    try:
+        lesson_date = datetime.strptime(lesson.date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Lesson date is invalid.")
+
+    if lesson_date < datetime.utcnow().date():
+        raise HTTPException(status_code=400, detail="You cannot schedule a lesson in the past.")
+
     conn = get_db()
     cursor = conn.cursor()
     lid = lesson.id or f"l_{int(time.time())}"
@@ -349,6 +357,16 @@ def reply_request(request_id: str, payload: ReplyPayload):
     if payload.updateLesson and payload.lessonId:
         updated_day = payload.newDay or "Monday"
         updated_date = payload.newDate or datetime.utcnow().strftime("%Y-%m-%d")
+        try:
+            parsed_date = datetime.strptime(updated_date, "%Y-%m-%d").date()
+        except ValueError:
+            conn.close()
+            raise HTTPException(status_code=400, detail="Approved lesson date is invalid.")
+
+        if parsed_date < datetime.utcnow().date():
+            conn.close()
+            raise HTTPException(status_code=400, detail="You cannot approve a lesson in the past.")
+
         updated_start = payload.newStartTime or "09:00"
         updated_end = payload.newEndTime or "10:00"
         updated_week = datetime.strptime(updated_date, "%Y-%m-%d").strftime("%Y-W%W")

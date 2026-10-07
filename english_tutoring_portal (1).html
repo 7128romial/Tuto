@@ -2631,6 +2631,11 @@
         return minutesToTime(startMinutes + 60);
       })();
 
+      if (isPastDate(newDate)) {
+        alert('You cannot approve a lesson in the past.');
+        return false;
+      }
+
       lesson.day = dayName;
       lesson.date = newDate;
       lesson.startTime = startValue;
@@ -2910,9 +2915,31 @@
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
 
+    function isPastDate(dateString) {
+      if (!dateString) return false;
+      const target = new Date(`${dateString}T00:00:00`);
+      if (Number.isNaN(target.getTime())) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return target < today;
+    }
+
+    function validateLessonDate(dateString, contextLabel = 'Lesson') {
+      if (isPastDate(dateString)) {
+        alert(`${contextLabel} cannot be scheduled in the past.`);
+        return false;
+      }
+      return true;
+    }
+
     function moveLessonToDay(lessonId, targetDayName, targetIsoDate, overrideStart = null, overrideEnd = null) {
       const lesson = lessons.find(l => l.id === lessonId);
       if (!lesson) return;
+
+      if (isPastDate(targetIsoDate)) {
+        alert('You cannot move a lesson to a past date.');
+        return;
+      }
 
       const currentWeek = getWeekData(weekOffset);
       const targetDay = currentWeek.days.find(d => d.dayName === targetDayName && d.isoDate === targetIsoDate);
@@ -3026,6 +3053,10 @@
         location: document.getElementById('modalLessonLocation').value,
         status: document.getElementById('modalLessonStatus').value
       };
+
+      if (!validateLessonDate(data.date, 'Lesson')) {
+        return;
+      }
 
       if (hasLessonTimeConflict(data, editId)) {
         const conflict = lessons.find(existing => {
