@@ -1148,44 +1148,41 @@
 
         <div class="auth-tabs">
           <button class="auth-tab-btn active" id="tabBtnStudentLogin" onclick="switchAuthTab('studentLogin')">
-            🎓 Student Sign In
+            Sign In
           </button>
           <button class="auth-tab-btn" id="tabBtnStudentRegister" onclick="switchAuthTab('studentRegister')">
-            ✨ Student Sign Up
-          </button>
-          <button class="auth-tab-btn" id="tabBtnTeacherLogin" onclick="switchAuthTab('teacherLogin')">
-            👩‍🏫 Teacher Sign In
+            Sign Up
           </button>
         </div>
 
         <div class="auth-body">
           
-          <!-- TAB 1: Student Sign In -->
+          <!-- Unified Sign In -->
           <div id="paneStudentLogin">
             <form onsubmit="handleStudentSignIn(event)">
               <div class="form-group">
-                <label class="form-label">Your Name or Phone Number:</label>
-                <input type="text" id="studentLoginIdentifier" class="input-field" placeholder="Enter your full name or phone" required>
+                <label class="form-label">Name, Email, or Phone Number:</label>
+                <input type="text" id="studentLoginIdentifier" class="input-field" placeholder="Enter your name, email, or phone" required>
               </div>
               <div class="form-group">
                 <label class="form-label">Password:</label>
                 <input type="password" id="studentPassInput" class="input-field" placeholder="Your password" required>
               </div>
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                Sign In to My Student Portal
+                Sign In
               </button>
               <div style="text-align: center; margin-top: 14px;">
-                <span style="font-size: 0.82rem; color: var(--slate-500);">New student? </span>
-                <a href="javascript:void(0)" onclick="switchAuthTab('studentRegister')" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none;">Create an account here</a>
+                <span style="font-size: 0.82rem; color: var(--slate-500);">New here? </span>
+                <a href="javascript:void(0)" onclick="switchAuthTab('studentRegister')" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none;">Create an account</a>
               </div>
             </form>
           </div>
 
-          <!-- TAB 2: Student Sign Up (New Student Registration) -->
+          <!-- Unified Sign Up -->
           <div id="paneStudentRegister" style="display: none;">
             <form onsubmit="handleStudentSignUp(event)">
               <div class="form-group">
-                <label class="form-label">Student Full Name:</label>
+                <label class="form-label">Full Name:</label>
                 <input type="text" id="regStudentName" class="input-field" placeholder="E.g., Maya Ronen" required>
               </div>
 
@@ -1206,29 +1203,12 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">Learning Goals / Notes for Teacher Annette:</label>
+                <label class="form-label">Learning Goals / Notes:</label>
                 <textarea id="regStudentNotes" class="input-field" placeholder="E.g., Preparing for high school bagrut, grammar, conversation..."></textarea>
               </div>
 
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                Sign Up & Enter My Portal
-              </button>
-            </form>
-          </div>
-
-          <!-- TAB 3: Teacher Sign In -->
-          <div id="paneTeacherLogin" style="display: none;">
-            <form onsubmit="handleTeacherSignIn(event)">
-              <div class="form-group">
-                <label class="form-label">Teacher Annette's Username / Email:</label>
-                <input type="text" id="teacherEmailInput" class="input-field" placeholder="Enter your teacher email or name" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Password / PIN:</label>
-                <input type="password" id="teacherPassInput" class="input-field" placeholder="Your teacher password" required>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                Sign In as Teacher Annette
+                Sign Up
               </button>
             </form>
           </div>
@@ -1853,11 +1833,9 @@
     function switchAuthTab(tab) {
       document.getElementById('tabBtnStudentLogin').classList.toggle('active', tab === 'studentLogin');
       document.getElementById('tabBtnStudentRegister').classList.toggle('active', tab === 'studentRegister');
-      document.getElementById('tabBtnTeacherLogin').classList.toggle('active', tab === 'teacherLogin');
 
       document.getElementById('paneStudentLogin').style.display = (tab === 'studentLogin') ? 'block' : 'none';
       document.getElementById('paneStudentRegister').style.display = (tab === 'studentRegister') ? 'block' : 'none';
-      document.getElementById('paneTeacherLogin').style.display = (tab === 'teacherLogin') ? 'block' : 'none';
     }
 
     async function handleTeacherSignIn(e) {
@@ -1897,7 +1875,7 @@
       }
 
       persistData();
-      triggerToast('Signed in as Teacher Annette');
+      triggerToast(`Signed in as ${session.name || 'Teacher'}`);
       refreshUI();
     }
 
@@ -1905,6 +1883,33 @@
       e.preventDefault();
       const identifier = document.getElementById('studentLoginIdentifier').value.trim();
       const pass = document.getElementById('studentPassInput').value.trim();
+
+      if (!identifier || !pass) {
+        alert('Please enter your name, email, phone, or password.');
+        return;
+      }
+
+      const normalizedUser = identifier.toLowerCase();
+      const teacher = teacherAccounts.find(t => t.email.toLowerCase() === normalizedUser || t.name.toLowerCase() === normalizedUser);
+      if (teacher) {
+        if (teacher.password !== pass) {
+          alert('Incorrect password.');
+          return;
+        }
+        session = { role: 'teacher', teacherId: teacher.id, name: teacher.name };
+        persistData();
+        triggerToast('Signed in as Teacher');
+        refreshUI();
+        return;
+      }
+
+      if (['annette', 'annette@lessons.com', 'annette@lessons'].includes(normalizedUser) && ['annette123', 'annette', 'admin'].includes(pass)) {
+        session = { role: 'teacher', teacherId: 't_annette', name: 'Annette' };
+        persistData();
+        triggerToast('Signed in as Teacher Annette');
+        refreshUI();
+        return;
+      }
 
       if (isBackendActive) {
         try {
@@ -1927,7 +1932,7 @@
           s.id === identifier
         );
         if (!st) {
-          alert('No student account found for "' + identifier + '". Please click "Student Sign Up" to register.');
+          alert('No account found for "' + identifier + '". Please sign up first.');
           return;
         }
         if (st.password && st.password !== pass) {
@@ -2038,7 +2043,7 @@
 
       if (session.role === 'teacher') {
         document.getElementById('userPillIcon').textContent = '👩‍🏫';
-        document.getElementById('userPillName').textContent = 'Teacher Annette';
+        document.getElementById('userPillName').textContent = `Teacher ${session.name || 'Annette'}`;
         teacherActions.style.display = 'flex';
         studentWrap.style.display = 'none';
         teacherWrap.style.display = 'block';
