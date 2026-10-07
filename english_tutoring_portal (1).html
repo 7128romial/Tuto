@@ -2793,7 +2793,8 @@
       if (!activeWaContext) return;
       const { lesson, student } = activeWaContext;
       const name = student ? student.name : 'Student';
-      const phone = student ? (student.studentPhone || student.parentPhone || student.phone || student.wa || '') : '';
+      const rawPhone = student ? (student.studentPhone || student.parentPhone || student.phone || student.wa || '') : '';
+      const phone = rawPhone.replace(/\D/g, '');
 
       let text = '';
       if (type === 'reminder') {
@@ -2963,12 +2964,7 @@
     function openDirectStudentWa(studentId) {
       const st = students.find(s => s.id === studentId);
       if (!st) return;
-      const directPhone = st.studentPhone || st.parentPhone || st.phone || st.wa || '';
       activeWaContext = { student: st, lesson: { day: 'our next lesson', date: '', startTime: '', rate: st.rate, method: 'Bit' } };
-      if (directPhone) {
-        const encoded = encodeURIComponent(document.getElementById('waComposerText').value || '');
-        document.getElementById('waSendAnchor').href = `https://wa.me/${directPhone.replace(/\D/g, '')}?text=${encoded}`;
-      }
       setWaTemplate('confirm');
       openModal('waModal');
     }
