@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Annette's Private Lessons — Student Portal & Schedule</title>
+  <title>Annette's Private Lessons</title>
+  <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1084,7 +1085,7 @@
           <div class="brand-title">Annette's Private Lessons</div>
           <div class="brand-subtitle" id="navSubtitle">
             <span>Student & Teacher Portal</span>
-            <span class="backend-pill" id="backendStatusPill">⚡ Ready</span>
+            <span class="backend-pill" id="backendStatusPill">Connecting…</span>
           </div>
         </div>
       </div>
@@ -1106,14 +1107,14 @@
   <div class="subnav" id="subnavBar" style="display: none;">
     <div class="subnav-inner">
       <div class="week-nav">
-        <button class="btn-circle" onclick="shiftWeek(-1)" title="Previous Week">
+        <button class="btn-circle" onclick="shiftWeek(-1)" title="Previous Week" aria-label="Previous week">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <div class="week-label-box">
           <span class="week-label" id="currentWeekRange">Current Week</span>
           <span class="week-sublabel" id="weekDescriptor">Active Schedule</span>
         </div>
-        <button class="btn-circle" onclick="shiftWeek(1)" title="Next Week">
+        <button class="btn-circle" onclick="shiftWeek(1)" title="Next Week" aria-label="Next week">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
         </button>
         <button class="btn btn-secondary btn-sm" onclick="resetToThisWeek()">This Week</button>
@@ -1123,11 +1124,11 @@
       <div id="teacherActionButtons" style="display: none; gap: 10px;">
         <button class="btn btn-secondary btn-sm" onclick="duplicateCurrentWeek()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          Duplicate Week to Next
+          Copy Week to Next
         </button>
         <button class="btn btn-primary btn-sm" onclick="openLessonModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
-          Add New Lesson
+          Add Lesson
         </button>
       </div>
     </div>
@@ -1161,19 +1162,20 @@
           <div id="paneStudentLogin">
             <form onsubmit="handleStudentSignIn(event)">
               <div class="form-group">
-                <label class="form-label">Name, Email, or Phone Number:</label>
-                <input type="text" id="studentLoginIdentifier" class="input-field" placeholder="Enter your name, email, or phone" required>
+                <label class="form-label" for="studentLoginIdentifier">Name or Phone Number:</label>
+                <input type="text" id="studentLoginIdentifier" class="input-field" placeholder="E.g., Maya Ronen or 054-123-4567" autocomplete="username" required>
               </div>
               <div class="form-group">
-                <label class="form-label">Password:</label>
-                <input type="password" id="studentPassInput" class="input-field" placeholder="Your password" required>
+                <label class="form-label" for="studentPassInput">Password:</label>
+                <input type="password" id="studentPassInput" class="input-field" placeholder="Your password" autocomplete="current-password" required>
               </div>
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
                 Sign In
               </button>
               <div style="text-align: center; margin-top: 14px;">
-                <span style="font-size: 0.82rem; color: var(--slate-500);">New here? </span>
+                <span style="font-size: 0.82rem; color: var(--slate-500);">New student? </span>
                 <a href="javascript:void(0)" onclick="switchAuthTab('studentRegister')" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none;">Create an account</a>
+                <div style="font-size: 0.75rem; color: var(--slate-400); margin-top: 6px;">Teacher? Sign in here with your teacher username.</div>
               </div>
             </form>
           </div>
@@ -1193,7 +1195,7 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">Create Password:</label>
-                  <input type="password" id="regStudentPassword" class="input-field" placeholder="Min. 4 characters" required>
+                  <input type="password" id="regStudentPassword" class="input-field" placeholder="Min. 4 characters" minlength="4" autocomplete="new-password" required>
                 </div>
               </div>
 
@@ -1203,14 +1205,14 @@
                   <input type="text" id="regParentName" class="input-field" placeholder="E.g., Dana Levi" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Parent Phone (with country code):</label>
-                  <input type="text" id="regParentPhone" class="input-field" placeholder="E.g., +972 54-123-4567" required>
+                  <label class="form-label">Parent Phone:</label>
+                  <input type="tel" id="regParentPhone" class="input-field" placeholder="E.g., 054-123-4567" required>
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Student Phone (with country code):</label>
-                <input type="text" id="regStudentPhone" class="input-field" placeholder="E.g., +972 52-123-4567">
+                <label class="form-label">Student Phone (optional):</label>
+                <input type="tel" id="regStudentPhone" class="input-field" placeholder="E.g., 052-123-4567">
               </div>
 
               <div class="form-group">
@@ -1219,8 +1221,12 @@
               </div>
 
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                Sign Up
+                Create Account
               </button>
+              <div style="text-align: center; margin-top: 14px;">
+                <span style="font-size: 0.82rem; color: var(--slate-500);">Already have an account? </span>
+                <a href="javascript:void(0)" onclick="switchAuthTab('studentLogin')" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none;">Sign in</a>
+              </div>
             </form>
           </div>
 
@@ -1237,7 +1243,7 @@
       <div class="student-welcome-header">
         <div class="student-welcome-text">
           <h2 id="studentGreetingTitle">Hello! 👋</h2>
-          <p>Welcome to Annette's Private Lessons. Below is your personal lesson schedule. You only see your own appointments. To reschedule or cancel, submit your note below.</p>
+          <p>Here is your lesson schedule. Need to change or cancel a lesson? Send Teacher Annette a message below.</p>
         </div>
         <div style="background: rgba(255, 255, 255, 0.15); padding: 10px 18px; border-radius: var(--radius-md); font-weight: 700; color: white;">
           🎓 Student Portal
@@ -1274,37 +1280,37 @@
           <div class="panel-header">
             <div class="panel-title">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              Request Change or Cancellation
+              Message Teacher Annette
             </div>
           </div>
           <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 16px;">
-            Need a different hour or have an exam? Choose your session, write your requested time or reason, and Teacher Annette will reply to you directly.
+            Choose a lesson, say what you need, and Teacher Annette will answer here.
           </p>
 
           <form onsubmit="handleStudentRequestSubmit(event)">
             <div class="form-group">
-              <label class="form-label">Select Your Lesson:</label>
-              <select id="reqTargetLessonSelect" class="input-field" required>
+              <label class="form-label">Which lesson?</label>
+              <select id="reqTargetLessonSelect" class="input-field">
                 <!-- Populated strictly with this student's lessons -->
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Request Type:</label>
+              <label class="form-label">What do you need?</label>
               <select id="reqTypeSelect" class="input-field">
                 <option value="Reschedule">🔄 Reschedule / Different Hour</option>
-                <option value="Cancel">❌ Cancel This Week's Lesson</option>
-                <option value="Question">💬 Question About My Lesson</option>
+                <option value="Cancel">❌ Cancel This Lesson</option>
+                <option value="Question">💬 Question</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Your Note / Preferred Alternative Time:</label>
+              <label class="form-label">Your message:</label>
               <textarea id="reqNoteText" class="input-field" placeholder="E.g., Hi Annette, can we move our lesson to Thursday at 17:00? I have a school test..." required></textarea>
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%;">
-              Send Note to Teacher Annette
+              Send Message
             </button>
           </form>
         </div>
@@ -1316,7 +1322,7 @@
         <div class="panel-header">
           <div class="panel-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
-            My Notes & Teacher Annette's Answers
+            My Messages & Answers
           </div>
         </div>
         <div id="studentRequestFeed">
@@ -1335,7 +1341,7 @@
       <div class="metrics-row">
         <div class="metric-card accent-primary">
           <div class="metric-header">
-            <span>Weekly Sessions</span>
+            <span>Lessons This Week</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
           </div>
           <div class="metric-value" id="mTotalLessons">0</div>
@@ -1344,7 +1350,7 @@
 
         <div class="metric-card accent-amber">
           <div class="metric-header">
-            <span>Student Requests</span>
+            <span>New Messages</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
           <div class="metric-value" id="mPendingReqs" style="color: var(--amber-600);">0</div>
@@ -1353,48 +1359,48 @@
 
         <div class="metric-card accent-emerald">
           <div class="metric-header">
-            <span>Weekly Earnings</span>
+            <span>Earnings This Week</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
-          <div class="metric-value" id="mTotalRevenue">$0</div>
+          <div class="metric-value" id="mTotalRevenue">₪0</div>
           <div class="progress-bar-wrap">
             <div class="progress-bar-fill" id="mProgressFill" style="width: 0%;"></div>
           </div>
-          <div class="metric-footer" id="mPaidSubtitle">$0 collected (0%)</div>
+          <div class="metric-footer" id="mPaidSubtitle">₪0 collected (0%)</div>
         </div>
 
         <div class="metric-card accent-rose">
           <div class="metric-header">
-            <span>Pending Balance</span>
+            <span>Still Unpaid</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <div class="metric-value" id="mUnpaidBalance" style="color: var(--rose-600);">$0</div>
+          <div class="metric-value" id="mUnpaidBalance" style="color: var(--rose-600);">₪0</div>
           <div class="metric-footer" id="mUnpaidSessions">0 unpaid lessons</div>
         </div>
       </div>
 
       <!-- Teacher Navigation Tabs -->
       <div class="teacher-nav">
-        <button class="t-tab-btn active" onclick="showTeacherTab('schedule', this)">
+        <button class="t-tab-btn active" data-tab="schedule" onclick="showTeacherTab('schedule', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-          Master Timetable
+          Schedule
         </button>
-        <button class="t-tab-btn" onclick="showTeacherTab('requests', this)">
+        <button class="t-tab-btn" data-tab="requests" onclick="showTeacherTab('requests', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Student Requests Inbox
+          Messages
           <span class="role-badge-count" id="pendingBadgeTab" style="display: none;">0</span>
         </button>
-        <button class="t-tab-btn" onclick="showTeacherTab('payments', this)">
+        <button class="t-tab-btn" data-tab="payments" onclick="showTeacherTab('payments', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-          Payment Tracker
+          Payments
         </button>
-        <button class="t-tab-btn" onclick="showTeacherTab('roster', this)">
+        <button class="t-tab-btn" data-tab="roster" onclick="showTeacherTab('roster', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Student Roster
+          Students
         </button>
-        <button class="t-tab-btn" onclick="showTeacherTab('backup', this)">
+        <button class="t-tab-btn" data-tab="backup" onclick="showTeacherTab('backup', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10M18.4 4.6a10 10 0 1 1-12.8 0"/></svg>
-          Data & Settings
+          Backup
         </button>
       </div>
 
@@ -1416,8 +1422,9 @@
             </select>
             <select id="scheduleLocFilter" class="input-field" style="width: auto; padding: 8px 12px;" onchange="handleScheduleFilterChange()">
               <option value="all">All Locations</option>
-              <option value="Studio">In-Person Studio</option>
-              <option value="Zoom">Zoom / Online</option>
+              <option value="Studio">Studio</option>
+              <option value="Online">Online</option>
+              <option value="Home">Student's Home</option>
             </select>
           </div>
 
@@ -1432,9 +1439,9 @@
         <div class="content-panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Inquiries & Reschedule Requests</div>
+              <div class="panel-title">Student Messages</div>
               <p style="font-size: 0.8rem; color: var(--slate-500); margin-top: 2px;">
-                Answer student requests, approve new times, or cancel slots with a click.
+                New messages appear first. Answer, approve a new time, or cancel the lesson.
               </p>
             </div>
           </div>
@@ -1457,7 +1464,7 @@
             <div>
               <select id="paymentFilterSelect" class="input-field" style="width: auto; padding: 6px 12px;" onchange="renderPaymentLedger()">
                 <option value="all">All Lessons This Week</option>
-                <option value="unpaid">Unpaid / Pending Only</option>
+                <option value="unpaid">Unpaid Only</option>
                 <option value="paid">Paid Only</option>
               </select>
             </div>
@@ -1506,9 +1513,9 @@
                   <th>Student Name</th>
                   <th>Level / Grade</th>
                   <th>Parent Contact</th>
-                  <th>Default Hourly Rate</th>
+                  <th>Hourly Rate</th>
                   <th>Learning Focus</th>
-                  <th>Contact Parent</th>
+                  <th>WhatsApp</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -1557,7 +1564,7 @@
   <div class="modal-backdrop" id="lessonModal">
     <div class="modal-box">
       <div class="modal-top">
-        <h3 id="lessonModalHeader">Add Private Lesson</h3>
+        <h3 id="lessonModalHeader">Add Lesson</h3>
         <button class="close-modal-btn" onclick="closeModal('lessonModal')">&times;</button>
       </div>
       <form onsubmit="handleLessonSave(event)">
@@ -1571,29 +1578,15 @@
             </select>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-              <label class="form-label">Day of Week:</label>
-              <select id="modalLessonDay" class="input-field" required>
-                <option value="Sunday">Sunday</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-                <option value="Friday">Friday</option>
-                <option value="Saturday">Saturday</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Date:</label>
-              <input type="date" id="modalLessonDate" class="input-field" required>
-            </div>
+          <div class="form-group">
+            <label class="form-label">Date: <span id="modalLessonDayHint" style="color: var(--primary);"></span></label>
+            <input type="date" id="modalLessonDate" class="input-field" required onchange="updateModalDayHint()">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
               <label class="form-label">Start Time:</label>
-              <input type="time" id="modalLessonStart" class="input-field" required value="16:00">
+              <input type="time" id="modalLessonStart" class="input-field" required value="16:00" onchange="handleModalStartChange()">
             </div>
             <div class="form-group">
               <label class="form-label">End Time:</label>
@@ -1603,13 +1596,13 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
-              <label class="form-label">Rate / Fee ($ or ₪):</label>
+              <label class="form-label">Price (₪):</label>
               <input type="number" id="modalLessonRate" class="input-field" required value="220" min="0">
             </div>
             <div class="form-group">
               <label class="form-label">Payment Status:</label>
               <select id="modalLessonPayment" class="input-field">
-                <option value="Unpaid">Unpaid / Pending</option>
+                <option value="Unpaid">Unpaid</option>
                 <option value="Paid">Paid</option>
               </select>
             </div>
@@ -1630,7 +1623,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Session Status:</label>
+              <label class="form-label">Lesson Status:</label>
               <select id="modalLessonStatus" class="input-field">
                 <option value="Confirmed">Confirmed</option>
                 <option value="Completed">Completed</option>
@@ -1640,8 +1633,9 @@
           </div>
         </div>
         <div class="modal-bottom">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('lessonModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Session</button>
+          <button type="button" class="btn btn-sm" id="modalLessonDeleteBtn" style="display:none; margin-right:auto; background:var(--rose-50); color:var(--rose-600); border:1px solid #fecdd3;" onclick="deleteLessonFromModal()">Delete</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('lessonModal')">Close</button>
+          <button type="submit" class="btn btn-primary">Save Lesson</button>
         </div>
       </form>
     </div>
@@ -1659,7 +1653,7 @@
           <input type="hidden" id="modalStudentId">
 
           <div class="form-group">
-            <label class="form-label">Student Name:</label>
+            <label class="form-label">Student Name: *</label>
             <input type="text" id="modalStudentName" class="input-field" required placeholder="E.g., Maya Ronen">
           </div>
 
@@ -1669,7 +1663,7 @@
               <input type="text" id="modalStudentGrade" class="input-field" placeholder="E.g., 9th Grade / 5-Units">
             </div>
             <div class="form-group">
-              <label class="form-label">Standard Hourly Rate:</label>
+              <label class="form-label">Hourly Rate (₪):</label>
               <input type="number" id="modalStudentRate" class="input-field" value="220" min="0">
             </div>
           </div>
@@ -1680,14 +1674,14 @@
               <input type="text" id="modalStudentParentName" class="input-field" placeholder="E.g., Dana Levi">
             </div>
             <div class="form-group">
-              <label class="form-label">Parent Phone (with country code):</label>
-              <input type="text" id="modalStudentPhone" class="input-field" placeholder="E.g., +972 54-123-4567">
+              <label class="form-label">Parent Phone:</label>
+              <input type="tel" id="modalStudentPhone" class="input-field" placeholder="E.g., 054-123-4567">
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Student Phone (with country code):</label>
-            <input type="text" id="modalStudentPhoneStudent" class="input-field" placeholder="E.g., +972 52-123-4567">
+            <label class="form-label">Student Phone:</label>
+            <input type="tel" id="modalStudentPhoneStudent" class="input-field" placeholder="E.g., 052-123-4567">
           </div>
 
           <div class="form-group">
@@ -1696,7 +1690,7 @@
           </div>
         </div>
         <div class="modal-bottom">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('studentModal')">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('studentModal')">Close</button>
           <button type="submit" class="btn btn-primary">Save Student</button>
         </div>
       </form>
@@ -1707,12 +1701,12 @@
   <div class="modal-backdrop" id="waModal">
     <div class="modal-box">
       <div class="modal-top">
-        <h3>💬 WhatsApp Message Preview</h3>
+        <h3>💬 WhatsApp Message</h3>
         <button class="close-modal-btn" onclick="closeModal('waModal')">&times;</button>
       </div>
       <div class="modal-body-content">
         <p style="font-size:0.85rem; color:var(--slate-500); margin-bottom:14px;">
-          Choose a message template or edit the text before sending to the parent or student:
+          Pick a template, edit the text if needed, then open WhatsApp.
         </p>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
           <span class="quick-chip" onclick="setWaTemplate('reminder')">📅 Lesson Reminder</span>
@@ -1725,6 +1719,7 @@
             <option value="student">Student</option>
             <option value="parent">Parent</option>
           </select>
+          <div id="waPhoneHint" style="font-size:0.75rem; color:var(--slate-500); margin-top:4px;"></div>
         </div>
         <div class="form-group">
           <textarea id="waComposerText" class="input-field" style="min-height:110px;"></textarea>
@@ -1732,7 +1727,7 @@
       </div>
       <div class="modal-bottom">
         <button type="button" class="btn btn-secondary" onclick="copyWaText()">Copy Text</button>
-        <a id="waSendAnchor" href="#" target="_blank" class="btn btn-primary" style="background:#25d366; border-color:#25d366;">
+        <a id="waSendAnchor" href="#" target="_blank" rel="noopener" onclick="handleWaSendClick(event)" class="btn btn-primary" style="background:#25d366; border-color:#25d366;">
           Open in WhatsApp
         </a>
       </div>
@@ -1748,13 +1743,13 @@
   <!-- Application Logic -->
   <script>
     /* Clean Production State (No Dummy Data) */
-    let students = JSON.parse(localStorage.getItem('annette_students')) || [];
-    let lessons = JSON.parse(localStorage.getItem('annette_lessons')) || [];
-    let requests = JSON.parse(localStorage.getItem('annette_requests')) || [];
-    let teacherAccounts = JSON.parse(localStorage.getItem('annette_teacher_accounts')) || [];
-    let session = JSON.parse(localStorage.getItem('annette_session')) || null;
+    let students = loadStored('annette_students', []);
+    let lessons = loadStored('annette_lessons', []);
+    let requests = loadStored('annette_requests', []);
+    let session = loadStored('annette_session', null);
     let weekOffset = 0;
     let activeWaContext = null;
+    let activeTeacherTab = 'schedule';
 
     // Use current real date as reference
     const now = new Date();
@@ -1765,29 +1760,38 @@
     const API_BASE = (window.location.protocol.startsWith('http')) ? '/api' : 'http://127.0.0.1:8000/api';
 
     async function checkBackendConnection() {
+      const pill = document.getElementById('backendStatusPill');
       try {
         const res = await fetch(`${API_BASE}/health`, { method: 'GET' });
         if (res.ok) {
           isBackendActive = true;
-          document.getElementById('backendStatusPill').textContent = '🟢 Server Online';
-          document.getElementById('backendStatusPill').classList.add('online');
+          pill.textContent = '🟢 Online';
+          pill.classList.add('online');
           await loadFromBackend();
           return;
         }
       } catch (e) {
-        isBackendActive = false;
-        document.getElementById('backendStatusPill').textContent = '⚡ Browser Storage';
+        // Server unreachable, fall through to offline mode.
       }
+      isBackendActive = false;
+      pill.textContent = '⚡ Offline mode';
+      pill.title = 'Server not reachable. Changes are saved in this browser only.';
     }
 
     async function loadFromBackend() {
+      if (!isBackendActive) return;
       try {
+        const isStudent = session && session.role === 'student';
+        const scope = isStudent ? `?studentId=${encodeURIComponent(session.studentId)}` : '';
         const [stRes, lsRes, rqRes] = await Promise.all([
           fetch(`${API_BASE}/students`),
-          fetch(`${API_BASE}/lessons`),
-          fetch(`${API_BASE}/requests`)
+          fetch(`${API_BASE}/lessons${scope}`),
+          fetch(`${API_BASE}/requests${scope}`)
         ]);
-        if (stRes.ok) students = await stRes.json();
+        if (stRes.ok) {
+          students = await stRes.json();
+          if (isStudent) students = students.filter(s => s.id === session.studentId);
+        }
         if (lsRes.ok) lessons = await lsRes.json();
         if (rqRes.ok) requests = await rqRes.json();
         persistData();
@@ -1798,11 +1802,106 @@
     }
 
     function persistData() {
-      localStorage.setItem('annette_students', JSON.stringify(students));
-      localStorage.setItem('annette_lessons', JSON.stringify(lessons));
-      localStorage.setItem('annette_requests', JSON.stringify(requests));
-      localStorage.setItem('annette_teacher_accounts', JSON.stringify(teacherAccounts));
-      localStorage.setItem('annette_session', JSON.stringify(session));
+      try {
+        localStorage.setItem('annette_students', JSON.stringify(students));
+        localStorage.setItem('annette_lessons', JSON.stringify(lessons));
+        localStorage.setItem('annette_requests', JSON.stringify(requests));
+        localStorage.setItem('annette_session', JSON.stringify(session));
+      } catch (e) {
+        console.warn('Could not save to browser storage:', e);
+      }
+    }
+
+    function loadStored(key, fallback) {
+      try {
+        return JSON.parse(localStorage.getItem(key)) ?? fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function api(method, path, body) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || 'The server could not save this change. Please try again.');
+      return data;
+    }
+
+    // Saves one lesson. Returns false and reloads server data if the save fails.
+    async function syncLesson(lesson) {
+      if (isBackendActive) {
+        try {
+          await api('POST', '/lessons', lesson);
+        } catch (err) {
+          alert(err.message);
+          await loadFromBackend();
+          return false;
+        }
+      }
+      persistData();
+      return true;
+    }
+
+    function toIsoDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function todayIso() {
+      return toIsoDate(new Date());
+    }
+
+    function dayNameFromIso(iso) {
+      const d = new Date(`${iso}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return '';
+      return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()];
+    }
+
+    function formatDate(iso) {
+      const d = new Date(`${iso}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return esc(iso);
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function sortLessons(list) {
+      return [...list].sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
+    }
+
+    function lessonsInWeek(week) {
+      const from = week.days[0].isoDate;
+      const to = week.days[6].isoDate;
+      return sortLessons(lessons.filter(l => l.date >= from && l.date <= to));
+    }
+
+    function upcomingLessons(studentId) {
+      const today = todayIso();
+      return sortLessons(lessons.filter(l => l.studentId === studentId && l.date >= today && l.status !== 'Cancelled'));
+    }
+
+    function lessonDurationLabel(l) {
+      const mins = timeToMinutes(l.endTime) - timeToMinutes(l.startTime);
+      if (mins <= 0) return '-';
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return [h ? `${h} hr` : '', m ? `${m} min` : ''].filter(Boolean).join(' ');
+    }
+
+    function statusBadgeClass(status) {
+      return status === 'Completed' ? 'badge-paid' : (status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed');
+    }
+
+    function locationShort(location) {
+      const loc = location || '';
+      if (loc.includes('Zoom') || loc.includes('Online')) return '💻 Online';
+      if (loc.includes('Home')) return '🏠 Student\'s home';
+      return '📍 Studio';
     }
 
     function triggerToast(text) {
@@ -1867,45 +1966,14 @@
       document.getElementById('paneStudentRegister').style.display = (tab === 'studentRegister') ? 'block' : 'none';
     }
 
-    async function handleTeacherSignIn(e) {
-      e.preventDefault();
-      const user = document.getElementById('teacherEmailInput').value.trim();
-      const pass = document.getElementById('teacherPassInput').value.trim();
 
-      if (isBackendActive) {
-        try {
-          const res = await fetch(`${API_BASE}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role: 'teacher', usernameOrId: user, password: pass })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.detail || 'Login failed');
-          session = data;
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
-      } else {
-        const normalizedUser = user.toLowerCase();
-        const teacher = teacherAccounts.find(t => t.email.toLowerCase() === normalizedUser || t.name.toLowerCase() === normalizedUser);
-        if (teacher) {
-          if (teacher.password !== pass) {
-            alert('Incorrect teacher password.');
-            return;
-          }
-          session = { role: 'teacher', teacherId: teacher.id, name: teacher.name };
-        } else if (['annette', 'annette@lessons.com', 'annette@lessons'].includes(normalizedUser) && ['annette123', 'annette', 'admin'].includes(pass)) {
-          session = { role: 'teacher', teacherId: 't_annette', name: 'Annette' };
-        } else {
-          alert('Invalid teacher login. Please use the default Annette login or contact the admin.');
-          return;
-        }
+    function setLocalTeacherSession(identifier, pass) {
+      const normalizedUser = identifier.toLowerCase();
+      if (['annette', 'annette@lessons.com', 'annette@lessons'].includes(normalizedUser) && ['annette123', 'annette', 'admin'].includes(pass)) {
+        session = { role: 'teacher', teacherId: 't_annette', name: 'Annette' };
+        return true;
       }
-
-      persistData();
-      triggerToast(`Signed in as ${session.name || 'Teacher'}`);
-      refreshUI();
+      return false;
     }
 
     async function handleStudentSignIn(e) {
@@ -1914,66 +1982,48 @@
       const pass = document.getElementById('studentPassInput').value.trim();
 
       if (!identifier || !pass) {
-        alert('Please enter your name, email, phone, or password.');
-        return;
-      }
-
-      const normalizedUser = identifier.toLowerCase();
-      const teacher = teacherAccounts.find(t => t.email.toLowerCase() === normalizedUser || t.name.toLowerCase() === normalizedUser);
-      if (teacher) {
-        if (teacher.password !== pass) {
-          alert('Incorrect password.');
-          return;
-        }
-        session = { role: 'teacher', teacherId: teacher.id, name: teacher.name };
-        persistData();
-        triggerToast('Signed in as Teacher');
-        refreshUI();
-        return;
-      }
-
-      if (['annette', 'annette@lessons.com', 'annette@lessons'].includes(normalizedUser) && ['annette123', 'annette', 'admin'].includes(pass)) {
-        session = { role: 'teacher', teacherId: 't_annette', name: 'Annette' };
-        persistData();
-        triggerToast('Signed in as Teacher Annette');
-        refreshUI();
+        alert('Please enter your name or phone number and your password.');
         return;
       }
 
       if (isBackendActive) {
         try {
-          const res = await fetch(`${API_BASE}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role: 'student', usernameOrId: identifier, password: pass })
-          });
-          if (!res.ok) throw new Error((await res.json()).detail || 'Login failed');
-          session = await res.json();
-        } catch (err) {
-          alert(err.message);
-          return;
+          session = await api('POST', '/auth/login', { role: 'teacher', usernameOrId: identifier, password: pass });
+        } catch (teacherErr) {
+          try {
+            session = await api('POST', '/auth/login', { role: 'student', usernameOrId: identifier, password: pass });
+          } catch (err) {
+            alert(err.message);
+            return;
+          }
         }
-      } else {
-        const query = identifier.toLowerCase();
-        const st = students.find(s => 
-          s.name.toLowerCase() === query || 
-          (s.phone && s.phone.replace(/\D/g, '') === identifier.replace(/\D/g, '')) ||
+      } else if (!setLocalTeacherSession(identifier, pass)) {
+        const digits = normalizePhoneForWa(identifier);
+        const st = students.find(s =>
+          (s.name || '').trim().toLowerCase() === identifier.toLowerCase() ||
+          (digits && [s.phone, s.parentPhone, s.studentPhone].some(p => normalizePhoneForWa(p) === digits)) ||
           s.id === identifier
         );
         if (!st) {
-          alert('No account found for "' + identifier + '". Please sign up first.');
+          alert(`No account found for "${identifier}". Please check the spelling or sign up first.`);
           return;
         }
-        if (st.password && st.password !== pass) {
-          alert('Incorrect password. Please verify your password.');
+        if (!st.password) {
+          alert('This account is not set up yet. Please use the invite link from Teacher Annette to sign up.');
+          return;
+        }
+        if (st.password !== pass) {
+          alert('Incorrect password. Please try again.');
           return;
         }
         session = { role: 'student', studentId: st.id, name: st.name };
       }
 
+      document.getElementById('studentPassInput').value = '';
       persistData();
-      triggerToast(`Welcome back, ${session.name}!`);
+      triggerToast(session.role === 'teacher' ? `Signed in as Teacher ${session.name || 'Annette'}` : `Welcome back, ${session.name}!`);
       refreshUI();
+      await loadFromBackend();
     }
 
     async function handleStudentSignUp(e) {
@@ -1985,82 +2035,82 @@
       const parentPhone = document.getElementById('regParentPhone').value.trim();
       const studentPhone = document.getElementById('regStudentPhone').value.trim();
       const notes = document.getElementById('regStudentNotes').value.trim();
-      const inviteCode = new URLSearchParams(window.location.search).get('invite');
-      const phone = parentPhone || studentPhone || '';
+      const inviteCode = new URLSearchParams(window.location.search).get('invite') || '';
 
       if (!name || !parentName || !parentPhone || !pass) {
-        alert('Please complete the student name, parent name, parent phone number, and password.');
+        alert('Please fill in the student name, parent name, parent phone and password.');
+        return;
+      }
+      if (pass.length < 4) {
+        alert('Your password must be at least 4 characters.');
         return;
       }
 
-      let cleanDigits = phone.replace(/\D/g, '');
-      if (cleanDigits.startsWith('0')) cleanDigits = '972' + cleanDigits.substring(1);
-
-      const matchedStudent = students.find(s => {
-        const sName = (s.name || '').trim().toLowerCase();
-        const sPhone = ((s.studentPhone || s.phone || s.parentPhone || '')).replace(/\D/g, '');
-        const normalizedPhone = cleanDigits.startsWith('972') ? cleanDigits : (cleanDigits.startsWith('0') ? '972' + cleanDigits.substring(1) : cleanDigits);
-        const linkedByInvite = inviteCode && s.inviteCode === inviteCode;
-        return linkedByInvite || (sName === name.toLowerCase() && sPhone === normalizedPhone);
-      });
-
-      if (matchedStudent) {
-        matchedStudent.password = pass;
-        matchedStudent.grade = grade || matchedStudent.grade || 'Student';
-        matchedStudent.notes = notes || matchedStudent.notes || '';
-        matchedStudent.parentName = parentName || matchedStudent.parentName || '';
-        matchedStudent.parentPhone = parentPhone || matchedStudent.parentPhone || matchedStudent.phone || '';
-        matchedStudent.studentPhone = studentPhone || matchedStudent.studentPhone || '';
-        matchedStudent.wa = cleanDigits;
-        matchedStudent.phone = parentPhone;
-        matchedStudent.rate = Number(matchedStudent.rate) || 220;
-        if (inviteCode) matchedStudent.inviteCode = inviteCode;
-        students = students.map(s => s.id === matchedStudent.id ? matchedStudent : s);
-        session = { role: 'student', studentId: matchedStudent.id, name: matchedStudent.name };
-        persistData();
-        triggerToast(`Welcome back, ${matchedStudent.name}!`);
-        refreshUI();
-        return;
-      }
+      const cleanDigits = normalizePhoneForWa(parentPhone);
 
       if (isBackendActive) {
         try {
-          const res = await fetch(`${API_BASE}/auth/signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, grade, phone, parentName, parentPhone, studentPhone, notes, password: pass, inviteCode })
-          });
-          if (!res.ok) throw new Error('Registration failed');
-          session = await res.json();
-          await loadFromBackend();
+          session = await api('POST', '/auth/signup', { name, grade, phone: parentPhone, parentName, parentPhone, studentPhone, notes, password: pass, inviteCode });
         } catch (err) {
           alert(err.message);
           return;
         }
       } else {
-        const newStudent = {
-          id: 's_' + Date.now(),
-          name, grade: grade || 'Student', rate: 220, phone: parentPhone, parentName, parentPhone, studentPhone, wa: cleanDigits, notes, password: pass, inviteCode: inviteCode || undefined
-        };
-        students.push(newStudent);
-        session = { role: 'student', studentId: newStudent.id, name: newStudent.name };
+        const studentDigits = normalizePhoneForWa(studentPhone);
+        const matchedStudent = students.find(s => {
+          if (inviteCode && s.inviteCode === inviteCode) return true;
+          if ((s.name || '').trim().toLowerCase() !== name.toLowerCase()) return false;
+          const phones = [s.phone, s.parentPhone, s.studentPhone].map(normalizePhoneForWa).filter(Boolean);
+          return phones.includes(cleanDigits) || (studentDigits && phones.includes(studentDigits));
+        });
+
+        if (matchedStudent) {
+          if (matchedStudent.password && matchedStudent.inviteCode !== inviteCode) {
+            alert('An account with this name and phone already exists. Please sign in instead.');
+            switchAuthTab('studentLogin');
+            return;
+          }
+          Object.assign(matchedStudent, {
+            password: pass,
+            grade: grade || matchedStudent.grade || 'Student',
+            notes: notes || matchedStudent.notes || '',
+            parentName,
+            parentPhone,
+            phone: parentPhone,
+            studentPhone: studentPhone || matchedStudent.studentPhone || '',
+            wa: cleanDigits,
+            rate: Number(matchedStudent.rate) || 220
+          });
+          session = { role: 'student', studentId: matchedStudent.id, name: matchedStudent.name };
+        } else {
+          const newStudent = {
+            id: 's_' + Date.now(),
+            name, grade: grade || 'Student', rate: 220, phone: parentPhone, parentName, parentPhone, studentPhone, wa: cleanDigits, notes, password: pass, inviteCode
+          };
+          students.push(newStudent);
+          session = { role: 'student', studentId: newStudent.id, name: newStudent.name };
+        }
       }
 
+      if (inviteCode) window.history.replaceState({}, '', window.location.pathname);
       persistData();
-      triggerToast(`Account created! Welcome, ${session.name}`);
+      triggerToast(`Welcome, ${session.name}! Your account is ready.`);
       refreshUI();
+      await loadFromBackend();
     }
 
-    function handleSignOut() {
+    async function handleSignOut() {
       session = null;
+      weekOffset = 0;
       persistData();
-      triggerToast('Signed out successfully.');
+      triggerToast('Signed out.');
       refreshUI();
+      await loadFromBackend();
     }
 
     function showTeacherTab(tab, btn) {
-      document.querySelectorAll('.t-tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      activeTeacherTab = tab;
+      document.querySelectorAll('.t-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
 
       document.getElementById('tTabSchedule').style.display = (tab === 'schedule') ? 'block' : 'none';
       document.getElementById('tTabRequests').style.display = (tab === 'requests') ? 'block' : 'none';
@@ -2142,26 +2192,27 @@
       if (!student) return;
       document.getElementById('studentGreetingTitle').textContent = `Hello, ${student.name}! 👋`;
 
-      const myLessonsThisWeek = lessons.filter(l => l.studentId === student.id && l.weekId === week.weekId);
+      const myLessonsThisWeek = lessonsInWeek(week).filter(l => l.studentId === student.id);
+      const myUpcoming = upcomingLessons(student.id);
 
       const heroContainer = document.getElementById('studentNextAppointmentHero');
-      if (myLessonsThisWeek.length > 0) {
-        const next = myLessonsThisWeek[0];
+      if (myUpcoming.length > 0) {
+        const next = myUpcoming[0];
         heroContainer.innerHTML = `
           <div class="next-appointment-hero">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
               <div>
-                <span class="badge badge-confirmed" style="margin-bottom:8px;">Your Scheduled Session</span>
+                <span class="badge badge-confirmed" style="margin-bottom:8px;">Your Next Lesson</span>
                 <div style="font-size:1.6rem; font-weight:800; color:var(--slate-900);">
-                  ${next.day}, ${next.date} at ${next.startTime} – ${next.endTime}
+                  ${formatDate(next.date)} · ${esc(next.startTime)}–${esc(next.endTime)}
                 </div>
                 <div style="font-size:0.95rem; color:var(--slate-600); margin-top:4px;">
-                  📖 Focus: <strong>${next.topic || 'Private Lesson'}</strong>
+                  📖 Focus: <strong>${esc(next.topic || 'Private Lesson')}</strong>
                 </div>
               </div>
               <div>
                 <span class="badge ${next.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}" style="font-size:0.85rem; padding:6px 14px;">
-                  ${next.payment === 'Paid' ? '✓ Lesson Fee Paid' : `⏳ Payment Due: ₪${next.rate}`}
+                  ${next.payment === 'Paid' ? '✓ Lesson Fee Paid' : `⏳ Payment Due: ₪${esc(next.rate)}`}
                 </span>
               </div>
             </div>
@@ -2169,7 +2220,7 @@
             <div class="appointment-meta-grid">
               <div class="meta-box">
                 <span class="meta-label">Location / Mode</span>
-                <span class="meta-value">📍 ${next.location}</span>
+                <span class="meta-value">📍 ${esc(next.location)}</span>
               </div>
               <div class="meta-box">
                 <span class="meta-label">Teacher</span>
@@ -2177,14 +2228,12 @@
               </div>
               <div class="meta-box">
                 <span class="meta-label">Duration</span>
-                <span class="meta-value">⏱️ 60 Minutes</span>
+                <span class="meta-value">⏱️ ${lessonDurationLabel(next)}</span>
               </div>
               <div class="meta-box">
                 <span class="meta-label">Status</span>
                 <span class="meta-value">
-                  <span class="badge ${next.status === 'Completed' ? 'badge-paid' : (next.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">
-                    ${next.status}
-                  </span>
+                  <span class="badge ${statusBadgeClass(next.status)}">${esc(next.status)}</span>
                 </span>
               </div>
             </div>
@@ -2194,89 +2243,87 @@
         heroContainer.innerHTML = `
           <div class="next-appointment-hero" style="text-align:center; padding:36px 20px;">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--slate-400); margin-bottom:12px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            <div style="font-size:1.2rem; font-weight:800; color:var(--slate-800); margin-bottom:6px;">No Lessons Scheduled For You This Week</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--slate-800); margin-bottom:6px;">No Upcoming Lessons Yet</div>
             <p style="font-size:0.9rem; color:var(--slate-500); max-width:480px; margin:0 auto;">
-              Teacher Annette has not scheduled a lesson for you between ${week.label} yet. She will assign your hours shortly, or you can write a note below.
+              Teacher Annette will add your lessons here. You can send her a question with the form below.
             </p>
           </div>
         `;
       }
 
       const apptList = document.getElementById('myAppointmentsList');
-      const targetSelect = document.getElementById('reqTargetLessonSelect');
-
       if (myLessonsThisWeek.length === 0) {
-        apptList.innerHTML = `<div style="text-align:center; padding:30px; color:var(--slate-400); font-size:0.9rem;">No appointments booked for this week.</div>`;
-        targetSelect.innerHTML = `<option value="">No lesson scheduled this week</option>`;
+        apptList.innerHTML = `<div style="text-align:center; padding:30px; color:var(--slate-400); font-size:0.9rem;">No lessons this week. Use the arrows at the top to see other weeks.</div>`;
       } else {
         apptList.innerHTML = myLessonsThisWeek.map(l => {
           const hasPending = requests.some(r => r.lessonId === l.id && r.status === 'Pending');
           return `
             <div class="private-lesson-card ${l.status === 'Cancelled' ? 'cancelled' : (l.status === 'Completed' ? 'completed' : '')}">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; flex-wrap:wrap;">
                 <div style="font-size:0.95rem; font-weight:800; color:var(--slate-900);">
-                  📅 ${l.day}, ${l.date}
+                  📅 ${formatDate(l.date)}
                 </div>
                 <div style="display:flex; gap:6px;">
                   <span class="badge ${l.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">
-                    ${l.payment === 'Paid' ? 'Paid' : `Pending: ₪${l.rate}`}
+                    ${l.payment === 'Paid' ? 'Paid' : `To pay: ₪${esc(l.rate)}`}
                   </span>
-                  <span class="badge ${l.status === 'Completed' ? 'badge-paid' : (l.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">
-                    ${l.status}
-                  </span>
+                  <span class="badge ${statusBadgeClass(l.status)}">${esc(l.status)}</span>
                 </div>
               </div>
 
               <div style="font-size:1.1rem; font-weight:800; color:var(--primary); margin-bottom:6px;">
-                🕒 ${l.startTime} – ${l.endTime}
+                🕒 ${esc(l.startTime)} – ${esc(l.endTime)}
               </div>
 
               <div style="font-size:0.85rem; color:var(--slate-700); margin-bottom:4px;">
-                📖 Focus: ${l.topic || 'English Tutoring'}
+                📖 Focus: ${esc(l.topic || 'English Tutoring')}
               </div>
 
               <div style="font-size:0.8rem; color:var(--slate-500); display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                <span>📍 ${l.location}</span>
-                ${hasPending ? '<span class="badge badge-unpaid">Pending Change Request</span>' : ''}
+                <span>📍 ${esc(l.location)}</span>
+                ${hasPending ? '<span class="badge badge-unpaid">Change request sent</span>' : ''}
               </div>
             </div>
           `;
         }).join('');
-
-        targetSelect.innerHTML = myLessonsThisWeek.map(l => `
-          <option value="${l.id}">${l.day} (${l.date}) @ ${l.startTime} - ${l.topic || 'Lesson'}</option>
-        `).join('');
       }
+
+      const targetSelect = document.getElementById('reqTargetLessonSelect');
+      const previous = targetSelect.options.length ? targetSelect.value : null;
+      targetSelect.innerHTML = myUpcoming.map(l => `
+          <option value="${esc(l.id)}">${formatDate(l.date)} at ${esc(l.startTime)} · ${esc(l.topic || 'Lesson')}</option>
+        `).join('') + `<option value="">General question (no specific lesson)</option>`;
+      if (previous !== null && [...targetSelect.options].some(o => o.value === previous)) targetSelect.value = previous;
 
       const myRequests = requests.filter(r => r.studentId === student.id);
       const feed = document.getElementById('studentRequestFeed');
 
       if (myRequests.length === 0) {
-        feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--slate-400); font-size:0.88rem;">You haven't sent any messages or change requests yet.</div>`;
+        feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--slate-400); font-size:0.88rem;">You haven't sent any messages yet.</div>`;
       } else {
         feed.innerHTML = myRequests.map(r => `
           <div class="req-item-card ${r.status === 'Pending' ? 'pending' : 'resolved'}">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap:8px; flex-wrap:wrap;">
               <div>
-                <span class="badge ${r.status === 'Pending' ? 'badge-unpaid' : 'badge-paid'}">${r.status}</span>
-                <strong style="margin-left: 8px; font-size: 0.92rem;">${r.requestType} for ${r.lessonSummary}</strong>
+                <span class="badge ${r.status === 'Pending' ? 'badge-unpaid' : 'badge-paid'}">${r.status === 'Pending' ? 'Waiting for answer' : 'Answered'}</span>
+                <strong style="margin-left: 8px; font-size: 0.92rem;">${esc(r.requestType)} · ${esc(r.lessonSummary || 'General')}</strong>
               </div>
               <span style="font-size: 0.75rem; color: var(--slate-400);">${new Date(r.dateSubmitted).toLocaleDateString()}</span>
             </div>
 
             <div class="chat-bubble-student">
-              "${r.message}"
+              "${esc(r.message)}"
             </div>
 
             ${r.teacherReply ? `
               <div class="chat-bubble-teacher">
                 <div class="teacher-badge">👩‍🏫 Teacher Annette's Answer:</div>
-                <div style="font-weight:600;">"${r.teacherReply}"</div>
+                <div style="font-weight:600;">"${esc(r.teacherReply)}"</div>
                 <div style="font-size:0.72rem; color:#4338ca; margin-top:6px;">Replied on ${new Date(r.teacherReplyDate).toLocaleDateString()}</div>
               </div>
             ` : `
               <div style="font-size: 0.8rem; color: var(--amber-700); font-weight: 600; margin-top: 6px; display:flex; align-items:center; gap:6px;">
-                ⏳ Teacher Annette has received your message and will answer you here shortly.
+                ⏳ Teacher Annette got your message and will answer here.
               </div>
             `}
           </div>
@@ -2290,7 +2337,14 @@
       const reqType = document.getElementById('reqTypeSelect').value;
       const note = document.getElementById('reqNoteText').value.trim();
 
-      if (!lessonId) { alert('Please select a lesson.'); return; }
+      if (!lessonId && reqType !== 'Question') {
+        alert('Please choose the lesson you want to change or cancel.');
+        return;
+      }
+      if (!note) {
+        alert('Please write a short note for Teacher Annette.');
+        return;
+      }
 
       const lesson = lessons.find(l => l.id === lessonId);
       const student = students.find(s => s.id === session.studentId) || { id: session.studentId, name: session.name };
@@ -2299,8 +2353,8 @@
         id: 'req_' + Date.now(),
         studentId: session.studentId,
         studentName: student.name,
-        lessonId: lessonId,
-        lessonSummary: lesson ? `${lesson.day} @ ${lesson.startTime}` : 'Session',
+        lessonId: lessonId || null,
+        lessonSummary: lesson ? `${lesson.day} ${lesson.date} @ ${lesson.startTime}` : 'General',
         requestType: reqType,
         message: note,
         dateSubmitted: new Date().toISOString(),
@@ -2311,23 +2365,19 @@
 
       if (isBackendActive) {
         try {
-          await fetch(`${API_BASE}/requests`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newReq)
-          });
-          await loadFromBackend();
+          await api('POST', '/requests', newReq);
         } catch (err) {
-          requests.unshift(newReq);
-          persistData();
+          alert(`Your message was not sent: ${err.message}`);
+          return;
         }
+        await loadFromBackend();
       } else {
         requests.unshift(newReq);
         persistData();
       }
 
       document.getElementById('reqNoteText').value = '';
-      triggerToast('Request sent to Teacher Annette!');
+      triggerToast('Message sent to Teacher Annette!');
       refreshUI();
     }
 
@@ -2335,9 +2385,9 @@
        TEACHER DASHBOARD
        ========================================================== */
     function renderTeacherDashboard(week) {
-      const weekLessons = lessons.filter(l => l.weekId === week.weekId);
+      const weekLessons = lessonsInWeek(week);
 
-      const totalCount = weekLessons.length;
+      const totalCount = weekLessons.filter(l => l.status !== 'Cancelled').length;
       const completedCount = weekLessons.filter(l => l.status === 'Completed').length;
       const pendingCount = requests.filter(r => r.status === 'Pending').length;
 
@@ -2360,14 +2410,17 @@
       document.getElementById('mProgressFill').style.width = `${pct}%`;
 
       document.getElementById('mTotalLessons').textContent = totalCount;
-      document.getElementById('mCompletedSubtitle').textContent = `${completedCount} sessions completed`;
+      document.getElementById('mCompletedSubtitle').textContent = `${completedCount} completed`;
       document.getElementById('mPendingReqs').textContent = pendingCount;
       document.getElementById('mTotalRevenue').textContent = `₪${totalRev}`;
       document.getElementById('mPaidSubtitle').textContent = `₪${paidRev} collected (${pct}%)`;
       document.getElementById('mUnpaidBalance').textContent = `₪${totalRev - paidRev}`;
-      document.getElementById('mUnpaidSessions').textContent = `${unpaidLessonsCount} unpaid lessons`;
+      document.getElementById('mUnpaidSessions').textContent = `${unpaidLessonsCount} unpaid lesson${unpaidLessonsCount === 1 ? '' : 's'}`;
 
       renderTeacherScheduleBoard(week);
+      if (activeTeacherTab === 'requests') renderTeacherRequests();
+      if (activeTeacherTab === 'payments') renderPaymentLedger();
+      if (activeTeacherTab === 'roster') renderStudentRoster();
     }
 
     function handleScheduleFilterChange() {
@@ -2377,26 +2430,26 @@
 
     function renderTeacherScheduleBoard(week) {
       const container = document.getElementById('teacherScheduleBoard');
-      let weekLessons = lessons.filter(l => l.weekId === week.weekId);
+      let weekLessons = lessonsInWeek(week);
 
       const searchQ = (document.getElementById('scheduleSearchInput')?.value || '').toLowerCase();
       const dayFilter = document.getElementById('scheduleDayFilter')?.value || 'all';
       const locFilter = document.getElementById('scheduleLocFilter')?.value || 'all';
 
       if (searchQ) {
-        weekLessons = weekLessons.filter(l => 
-          l.studentName.toLowerCase().includes(searchQ) || (l.topic || '').toLowerCase().includes(searchQ)
+        weekLessons = weekLessons.filter(l =>
+          (l.studentName || '').toLowerCase().includes(searchQ) || (l.topic || '').toLowerCase().includes(searchQ)
         );
       }
       if (locFilter !== 'all') {
-        weekLessons = weekLessons.filter(l => l.location.includes(locFilter));
+        weekLessons = weekLessons.filter(l => (l.location || '').includes(locFilter));
       }
 
       container.innerHTML = week.days.map(d => {
         if (dayFilter !== 'all' && d.dayName !== dayFilter) return '';
 
-        const dayLessons = weekLessons.filter(l => l.day === d.dayName);
-        dayLessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+        const dayLessons = weekLessons.filter(l => l.date === d.isoDate);
+        const isPastDay = d.isoDate < todayIso();
 
         return `
           <div class="day-column">
@@ -2419,42 +2472,43 @@
                 if (hasPending) cardClasses += ' has-pending-req';
 
                 return `
-                  <div class="${cardClasses}" draggable="true" data-lesson-id="${l.id}" data-start-time="${l.startTime}" data-end-time="${l.endTime}" aria-label="${l.studentName} lesson">
+                  <div class="${cardClasses}" draggable="true" data-lesson-id="${esc(l.id)}" title="Drag to another day to move this lesson">
                     <div class="lesson-time-row">
                       <span class="lesson-time">
-                        ${l.startTime}–${l.endTime}
+                        ${esc(l.startTime)}–${esc(l.endTime)}
                       </span>
                       <span class="badge ${l.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">
-                        ${l.payment === 'Paid' ? 'Paid' : `₪${l.rate}`}
+                        ${l.payment === 'Paid' ? 'Paid' : `₪${esc(l.rate)}`}
                       </span>
                     </div>
 
                     <div class="student-badge-name">
-                      👤 ${l.studentName}
+                      👤 ${esc(l.studentName)}
                     </div>
 
                     <div class="lesson-topic">
-                      ${l.topic || 'General Practice'}
+                      ${esc(l.topic || 'General Practice')}${l.status === 'Cancelled' ? ' · <strong>Cancelled</strong>' : ''}
                     </div>
 
                     <div style="font-size:0.75rem; color:var(--slate-500); display:flex; justify-content:space-between; align-items:center;">
-                      <span>📍 ${l.location.includes('Zoom') ? 'Zoom' : 'Studio'}</span>
-                      ${hasPending ? '<span class="badge badge-unpaid">Pending Req</span>' : ''}
+                      <span>${locationShort(l.location)}</span>
+                      ${hasPending ? '<span class="badge badge-unpaid">Request</span>' : ''}
                     </div>
 
                     <div class="lesson-actions-bar">
-                      <button class="action-icon-btn" onclick="editLesson('${l.id}')">Edit</button>
-                      <button class="action-icon-btn" onclick="quickTogglePay('${l.id}')">
-                        ${l.payment === 'Paid' ? 'Unpay' : 'Mark Paid'}
+                      <button class="action-icon-btn" onclick="editLesson('${esc(l.id)}')">Edit</button>
+                      <button class="action-icon-btn" onclick="quickTogglePay('${esc(l.id)}')">
+                        ${l.payment === 'Paid' ? 'Mark Unpaid' : 'Mark Paid'}
                       </button>
                     </div>
                   </div>
                 `;
               }).join('')}
 
-              <button class="btn btn-secondary btn-sm" style="margin-top:auto; width:100%; border-style:dashed;" onclick="quickAddForDay('${d.dayName}', '${d.isoDate}')">
-                + Add Slot
-              </button>
+              ${isPastDay ? '' : `
+              <button class="btn btn-secondary btn-sm" style="margin-top:auto; width:100%; border-style:dashed;" onclick="quickAddForDay('${d.isoDate}')">
+                + Add Lesson
+              </button>`}
             </div>
           </div>
         `;
@@ -2484,22 +2538,7 @@
           dayEl.style.borderColor = '';
           dayEl.style.background = '';
           const lessonId = e.dataTransfer.getData('text/plain');
-          const targetCard = e.target.closest('.teacher-lesson-card');
-          const targetDayName = dayEl.dataset.dayName;
-          const targetDate = dayEl.dataset.isoDate;
-
-          if (targetCard && targetCard.dataset.lessonId !== lessonId) {
-            moveLessonToDay(
-              lessonId,
-              targetDayName,
-              targetDate,
-              targetCard.dataset.startTime,
-              targetCard.dataset.endTime
-            );
-            return;
-          }
-
-          moveLessonToDay(lessonId, targetDayName, targetDate);
+          moveLessonToDay(lessonId, dayEl.dataset.isoDate);
         });
       });
     }
@@ -2507,57 +2546,78 @@
     function renderTeacherRequests() {
       const feed = document.getElementById('teacherRequestsFeed');
       if (requests.length === 0) {
-        feed.innerHTML = `<div style="text-align:center; padding:40px; color:var(--slate-400);">No requests in inbox.</div>`;
+        feed.innerHTML = `<div style="text-align:center; padding:40px; color:var(--slate-400);">No messages from students yet.</div>`;
         return;
       }
 
-      feed.innerHTML = requests.map(r => {
+      const ordered = [...requests].sort((a, b) => {
+        if ((a.status === 'Pending') !== (b.status === 'Pending')) return a.status === 'Pending' ? -1 : 1;
+        return String(b.dateSubmitted).localeCompare(String(a.dateSubmitted));
+      });
+
+      feed.innerHTML = ordered.map(r => {
         const isPending = (r.status === 'Pending');
+        const lesson = r.lessonId ? lessons.find(l => l.id === r.lessonId) : null;
+        const rid = esc(r.id);
         return `
           <div class="req-item-card ${isPending ? 'pending' : 'resolved'}">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
               <div>
-                <span class="badge ${isPending ? 'badge-unpaid' : 'badge-paid'}">${r.status}</span>
-                <strong style="margin-left: 8px; font-size: 1rem;">${r.studentName}</strong>
-                <span style="font-size:0.85rem; color:var(--slate-500); margin-left:6px;">(${r.requestType})</span>
+                <span class="badge ${isPending ? 'badge-unpaid' : 'badge-paid'}">${isPending ? 'Needs answer' : 'Answered'}</span>
+                <strong style="margin-left: 8px; font-size: 1rem;">${esc(r.studentName)}</strong>
+                <span style="font-size:0.85rem; color:var(--slate-500); margin-left:6px;">(${esc(r.requestType)})</span>
               </div>
               <span style="font-size:0.75rem; color:var(--slate-400);">${new Date(r.dateSubmitted).toLocaleString()}</span>
             </div>
 
             <div style="font-size:0.85rem; margin-top:6px; color:var(--slate-600);">
-              <strong>Target Session:</strong> ${r.lessonSummary}
+              <strong>Lesson:</strong> ${lesson ? `${formatDate(lesson.date)} at ${esc(lesson.startTime)}–${esc(lesson.endTime)} (${esc(lesson.status)})` : esc(r.lessonSummary || 'General question')}
             </div>
 
             <div class="chat-bubble-student">
-              "${r.message}"
+              "${esc(r.message)}"
             </div>
 
             ${r.teacherReply ? `
               <div class="chat-bubble-teacher" style="margin-bottom:12px;">
-                <div class="teacher-badge">Your Sent Answer:</div>
-                <div>"${r.teacherReply}"</div>
+                <div class="teacher-badge">Your answer:</div>
+                <div>"${esc(r.teacherReply)}"</div>
+              </div>
+            ` : ''}
+
+            ${isPending && lesson && r.requestType === 'Reschedule' ? `
+              <div style="margin:10px 0; padding:12px; border:1px dashed var(--primary-border); border-radius:var(--radius-sm); background:var(--primary-light);">
+                <div style="font-size:0.8rem; font-weight:700; color:var(--primary); margin-bottom:8px;">Move this lesson to:</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <input type="date" id="rsDate_${rid}" class="input-field" style="width:auto; padding:6px 10px;" value="${esc(lesson.date)}" min="${todayIso()}">
+                  <input type="time" id="rsStart_${rid}" class="input-field" style="width:auto; padding:6px 10px;" value="${esc(lesson.startTime)}">
+                  <span style="color:var(--slate-500);">to</span>
+                  <input type="time" id="rsEnd_${rid}" class="input-field" style="width:auto; padding:6px 10px;" value="${esc(lesson.endTime)}">
+                  <button class="btn btn-primary btn-sm" onclick="approveReschedule('${rid}')">✓ Approve & Move</button>
+                </div>
               </div>
             ` : ''}
 
             <div style="margin: 10px 0; display: flex; gap: 6px; flex-wrap: wrap;">
-              <span class="quick-chip" onclick="applyQuickReply('${r.id}', 'Approved! See you then.')">⚡ Approved</span>
-              <span class="quick-chip" onclick="applyQuickReply('${r.id}', 'Cancellation confirmed. We will make it up next week.')">⚡ Confirm Cancel</span>
-              <span class="quick-chip" onclick="applyQuickReply('${r.id}', 'Sorry, that hour is taken. Can you do 1 hour later?')">⚡ Suggest Different Hour</span>
+              <span class="quick-chip" onclick="applyQuickReply('${rid}', 'Approved! See you then.')">⚡ Approved</span>
+              <span class="quick-chip" onclick="applyQuickReply('${rid}', 'Cancellation confirmed. We will make it up next week.')">⚡ Confirm Cancel</span>
+              <span class="quick-chip" onclick="applyQuickReply('${rid}', 'Sorry, that hour is taken. Can you do 1 hour later?')">⚡ Suggest Different Hour</span>
             </div>
 
             <div style="margin-top: 10px;">
-              <textarea id="tReplyInput_${r.id}" class="input-field" style="min-height:60px; margin-bottom:8px;" placeholder="Type your answer to ${r.studentName}...">${r.teacherReply || ''}</textarea>
+              <textarea id="tReplyInput_${rid}" class="input-field" style="min-height:60px; margin-bottom:8px;" placeholder="Type your answer to ${esc(r.studentName)}...">${esc(r.teacherReply || '')}</textarea>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-primary btn-sm" onclick="submitTeacherReply('${r.id}')">
-                  Send Answer to Student
+                <button class="btn btn-primary btn-sm" onclick="submitTeacherReply('${rid}')">
+                  ${r.teacherReply ? 'Update Answer' : 'Send Answer'}
                 </button>
-                ${isPending ? `
-                  <button class="btn btn-secondary btn-sm" onclick="editLesson('${r.lessonId}')">
-                    ✏️ Update Slot in Timetable
+                ${isPending && lesson ? `
+                  <button class="btn btn-secondary btn-sm" onclick="editLesson('${esc(lesson.id)}')">
+                    ✏️ Edit Lesson
                   </button>
-                  <button class="btn btn-sm" style="background:var(--rose-50); color:var(--rose-600); border:1px solid #fecdd3;" onclick="cancelLessonFromRequest('${r.id}')">
-                    Mark Lesson Cancelled
-                  </button>
+                  ${lesson.status !== 'Cancelled' ? `
+                  <button class="btn btn-sm" style="background:var(--rose-50); color:var(--rose-600); border:1px solid #fecdd3;" onclick="cancelLessonFromRequest('${rid}')">
+                    Cancel Lesson & Reply
+                  </button>` : ''}
                 ` : ''}
               </div>
             </div>
@@ -2570,43 +2630,56 @@
       document.getElementById(`tReplyInput_${reqId}`).value = text;
     }
 
+    async function sendReply(reqId, text) {
+      if (isBackendActive) {
+        try {
+          await api('POST', `/requests/${encodeURIComponent(reqId)}/reply`, { reply: text, newStatus: 'Answered' });
+        } catch (err) {
+          alert(`The answer was not sent: ${err.message}`);
+          return false;
+        }
+      }
+      updateLocalReq(reqId, text);
+      return true;
+    }
+
     async function submitTeacherReply(reqId) {
       const text = document.getElementById(`tReplyInput_${reqId}`).value.trim();
       if (!text) { alert('Please write an answer for the student.'); return; }
 
-      const req = requests.find(r => r.id === reqId);
-      const syncLesson = req && req.requestType === 'Reschedule' ? syncApprovedReschedule(req, text) : false;
+      if (!(await sendReply(reqId, text))) return;
+      triggerToast('Answer sent to student!');
+      refreshUI();
+    }
 
-      if (isBackendActive) {
-        try {
-          const lesson = req && req.lessonId ? lessons.find(l => l.id === req.lessonId) : null;
-          await fetch(`${API_BASE}/requests/${reqId}/reply`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              reply: text,
-              newStatus: 'Answered',
-              lessonId: req?.lessonId || null,
-              newDay: lesson?.day || null,
-              newDate: lesson?.date || null,
-              newStartTime: lesson?.startTime || null,
-              newEndTime: lesson?.endTime || null,
-              updateLesson: syncLesson
-            })
-          });
-          await loadFromBackend();
-        } catch (err) {
-          updateLocalReq(reqId, text);
-          if (syncLesson) refreshUI();
-        }
-      } else {
-        updateLocalReq(reqId, text);
-        if (syncLesson) refreshUI();
+    async function approveReschedule(reqId) {
+      const req = requests.find(r => r.id === reqId);
+      const lesson = req && lessons.find(l => l.id === req.lessonId);
+      if (!lesson) return;
+
+      const newDate = document.getElementById(`rsDate_${reqId}`).value;
+      const newStart = document.getElementById(`rsStart_${reqId}`).value;
+      const newEnd = document.getElementById(`rsEnd_${reqId}`).value;
+
+      if (!newDate || !newStart || !newEnd) { alert('Please choose a date, start time and end time.'); return; }
+      if (isPastDate(newDate)) { alert('You cannot move a lesson to a past date.'); return; }
+      if (timeToMinutes(newEnd) <= timeToMinutes(newStart)) { alert('End time must be after start time.'); return; }
+
+      const updated = { ...lesson, date: newDate, day: dayNameFromIso(newDate), startTime: newStart, endTime: newEnd, weekId: getWeekIdFromDate(newDate), status: 'Confirmed' };
+      const conflict = findLessonConflict(updated, lesson.id);
+      if (conflict) {
+        alert(`That time overlaps with ${conflict.studentName}'s lesson (${conflict.startTime}–${conflict.endTime}). Please choose another time.`);
+        return;
       }
 
-      triggerToast('Reply sent to student!');
-      renderTeacherRequests();
-      updateBadges();
+      Object.assign(lesson, updated);
+      if (!(await syncLesson(lesson))) return;
+
+      const typed = document.getElementById(`tReplyInput_${reqId}`).value.trim();
+      const reply = typed || `Approved! Your lesson is now on ${formatDate(newDate)} at ${newStart}–${newEnd}.`;
+      await sendReply(reqId, reply);
+      triggerToast('Lesson moved and student notified.');
+      refreshUI();
     }
 
     function updateLocalReq(reqId, text) {
@@ -2630,141 +2703,58 @@
       return `${sun.getFullYear()}-W${weekNum}`;
     }
 
-    function syncApprovedReschedule(req, replyText) {
-      if (!req || req.requestType !== 'Reschedule') return false;
-      if (!req.lessonId) return false;
-
-      const lesson = lessons.find(l => l.id === req.lessonId);
-      if (!lesson) return false;
-
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const reply = String(replyText || '').trim();
-      if (!reply) return false;
-
-      const matchDay = reply.match(/\b(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)\b/i);
-      const matchTime = reply.match(/(\d{1,2}:\d{2})\s*(?:-|–|to)\s*(\d{1,2}:\d{2})/i);
-      const matchStartOnly = reply.match(/(?:at|on|for|\bto\b)\s*(\d{1,2}:\d{2})/i);
-
-      if (!matchDay && !matchTime && !matchStartOnly) return false;
-
-      const dayName = matchDay ? matchDay[1].charAt(0).toUpperCase() + matchDay[1].slice(1).toLowerCase() : lesson.day;
-      const newDate = matchDay ? (() => {
-        const targetIndex = dayNames.indexOf(dayName);
-        const currentDate = new Date(`${lesson.date}T00:00:00`);
-        const currentIndex = currentDate.getDay();
-        const diff = (targetIndex - currentIndex + 7) % 7;
-        const nextDate = new Date(currentDate);
-        nextDate.setDate(currentDate.getDate() + diff);
-        const yyyy = nextDate.getFullYear();
-        const mm = String(nextDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(nextDate.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      })() : lesson.date;
-
-      const startValue = matchTime ? matchTime[1] : (matchStartOnly ? matchStartOnly[1] : lesson.startTime);
-      const endValue = matchTime ? matchTime[2] : (() => {
-        const spare = reply.match(/(\d{1,2}:\d{2})\s*(?:-|–|to)\s*(\d{1,2}:\d{2})/i);
-        if (spare && spare[2]) return spare[2];
-        const startMinutes = timeToMinutes(startValue);
-        return minutesToTime(startMinutes + 60);
-      })();
-
-      if (isPastDate(newDate)) {
-        alert('You cannot approve a lesson in the past.');
-        return false;
-      }
-
-      lesson.day = dayName;
-      lesson.date = newDate;
-      lesson.startTime = startValue;
-      lesson.endTime = endValue;
-      lesson.weekId = getWeekIdFromDate(newDate) || lesson.weekId;
-
-      if (hasLessonTimeConflict(lesson, lesson.id)) {
-        lesson.day = req.lessonDay || lesson.day;
-        lesson.date = req.lessonDate || lesson.date;
-        lesson.startTime = req.lessonStartTime || lesson.startTime;
-        lesson.endTime = req.lessonEndTime || lesson.endTime;
-        return false;
-      }
-
-      persistData();
-      return true;
-    }
 
     async function cancelLessonFromRequest(reqId) {
       const req = requests.find(r => r.id === reqId);
-      if (req && req.lessonId) {
-        const l = lessons.find(les => les.id === req.lessonId);
-        if (l) {
-          l.status = 'Cancelled';
-          req.status = 'Answered';
-          req.teacherReply = req.teacherReply || 'Your cancellation has been noted and updated in the schedule.';
-          req.teacherReplyDate = new Date().toISOString();
+      const lesson = req && req.lessonId ? lessons.find(l => l.id === req.lessonId) : null;
+      if (!lesson) return;
+      if (!confirm(`Cancel ${lesson.studentName}'s lesson on ${formatDate(lesson.date)} at ${lesson.startTime}?`)) return;
 
-          if (isBackendActive) {
-            try {
-              await fetch(`${API_BASE}/lessons`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(l)
-              });
-              await fetch(`${API_BASE}/requests/${reqId}/reply`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reply: req.teacherReply, newStatus: 'Answered' })
-              });
-              await loadFromBackend();
-            } catch (err) {
-              persistData();
-            }
-          } else {
-            persistData();
-          }
+      lesson.status = 'Cancelled';
+      if (!(await syncLesson(lesson))) return;
 
-          triggerToast('Lesson cancelled and student notified.');
-          renderTeacherRequests();
-          refreshUI();
-        }
-      }
+      const typed = document.getElementById(`tReplyInput_${reqId}`)?.value.trim();
+      await sendReply(reqId, typed || 'Your lesson has been cancelled and updated in the schedule.');
+      triggerToast('Lesson cancelled and student notified.');
+      refreshUI();
     }
 
     /* Payments Tracker */
     function renderPaymentLedger() {
       const filter = document.getElementById('paymentFilterSelect').value;
       const week = getWeekData(weekOffset);
-      const weekLessons = lessons.filter(l => l.weekId === week.weekId);
+      const weekLessons = lessonsInWeek(week);
 
       let displayed = weekLessons;
-      if (filter === 'unpaid') displayed = weekLessons.filter(l => l.payment === 'Unpaid');
+      if (filter === 'unpaid') displayed = weekLessons.filter(l => l.payment !== 'Paid' && l.status !== 'Cancelled');
       if (filter === 'paid') displayed = weekLessons.filter(l => l.payment === 'Paid');
 
       const tbody = document.getElementById('paymentLedgerTbody');
       if (displayed.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--slate-400);">No lessons recorded for this week yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--slate-400);">No lessons match this filter for the selected week.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = displayed.map(l => {
         const isPaid = (l.payment === 'Paid');
-        const student = students.find(s => s.id === l.studentId);
+        const id = esc(l.id);
 
         return `
           <tr>
             <td>
-              <div style="font-weight:700; color:var(--slate-900);">${l.studentName}</div>
-              <div style="font-size:0.75rem; color:var(--slate-500);">${l.topic || 'Lesson'}</div>
+              <div style="font-weight:700; color:var(--slate-900);">${esc(l.studentName)}</div>
+              <div style="font-size:0.75rem; color:var(--slate-500);">${esc(l.topic || 'Lesson')}</div>
             </td>
-            <td>${l.day}, ${l.date} at ${l.startTime}</td>
-            <td><strong>₪${l.rate}</strong></td>
-            <td><span class="badge ${l.status === 'Completed' ? 'badge-paid' : (l.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">${l.status}</span></td>
+            <td>${formatDate(l.date)} at ${esc(l.startTime)}</td>
+            <td><strong>₪${esc(l.rate)}</strong></td>
+            <td><span class="badge ${statusBadgeClass(l.status)}">${esc(l.status)}</span></td>
             <td>
               <span class="badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}">
-                ${isPaid ? '✓ Paid' : '⏳ Pending'}
+                ${isPaid ? '✓ Paid' : '⏳ Unpaid'}
               </span>
             </td>
             <td>
-              <select class="input-field" style="padding:4px 8px; font-size:0.8rem; width:auto;" onchange="updatePaymentMethod('${l.id}', this.value)">
+              <select class="input-field" style="padding:4px 8px; font-size:0.8rem; width:auto;" onchange="updatePaymentMethod('${id}', this.value)">
                 <option value="Bit" ${l.method === 'Bit' ? 'selected' : ''}>Bit</option>
                 <option value="PayBox" ${l.method === 'PayBox' ? 'selected' : ''}>PayBox</option>
                 <option value="Cash" ${l.method === 'Cash' ? 'selected' : ''}>Cash</option>
@@ -2773,10 +2763,10 @@
             </td>
             <td>
               <div style="display:flex; gap:6px;">
-                <button class="btn btn-secondary btn-sm" onclick="quickTogglePay('${l.id}')">
+                <button class="btn btn-secondary btn-sm" onclick="quickTogglePay('${id}')">
                   ${isPaid ? 'Mark Unpaid' : 'Mark as Paid'}
                 </button>
-                <button class="wa-btn" onclick="openWaComposer('${l.id}')">
+                <button class="wa-btn" onclick="openWaComposer('${id}')">
                   💬 WhatsApp
                 </button>
               </div>
@@ -2792,6 +2782,7 @@
       const student = students.find(s => s.id === l.studentId);
       activeWaContext = { lesson: l, student: student };
 
+      document.getElementById('waRecipientSelect').value = student && student.studentPhone ? 'student' : 'parent';
       setWaTemplate(l.payment === 'Paid' ? 'confirm' : 'payment');
       openModal('waModal');
     }
@@ -2817,31 +2808,46 @@
     function setWaTemplate(type) {
       if (!activeWaContext) return;
       const { lesson, student } = activeWaContext;
-      const name = student ? student.name : 'Student';
-      const senderType = document.getElementById('waRecipientSelect') ? document.getElementById('waRecipientSelect').value : 'student';
+      const studentName = student ? student.name : 'there';
+      const senderType = document.getElementById('waRecipientSelect').value;
+      const toParent = senderType === 'parent';
+      const greetingName = toParent ? (student && student.parentName ? student.parentName : 'there') : studentName;
+      const whose = toParent ? `${studentName}'s` : 'our';
       const phone = getWaContactPhone(student, senderType);
 
       let text = '';
-      if (type === 'reminder') {
-        text = `Hi ${name}! This is Teacher Annette. Looking forward to our English lesson on ${lesson.day} (${lesson.date}) at ${lesson.startTime}. Please have your notebook ready!`;
+      if (!lesson) {
+        text = `Hi ${greetingName}! This is Teacher Annette.`;
+      } else if (type === 'reminder') {
+        text = `Hi ${greetingName}! This is Teacher Annette. A reminder about ${whose} English lesson on ${formatDate(lesson.date)} at ${lesson.startTime}. See you then!`;
       } else if (type === 'payment') {
-        text = `Hi ${name}! This is Teacher Annette. A gentle reminder regarding our lesson on ${lesson.day} (${lesson.date}) — fee is ₪${lesson.rate} (via ${lesson.method || 'Bit'}). Thank you!`;
-      } else if (type === 'confirm') {
-        text = `Hi ${name}! Your lesson for ${lesson.day} at ${lesson.startTime} is confirmed. See you soon! — Teacher Annette`;
+        text = `Hi ${greetingName}! This is Teacher Annette. A gentle reminder about payment for ${whose} lesson on ${formatDate(lesson.date)}: ₪${lesson.rate} via ${lesson.method || 'Bit'}. Thank you!`;
+      } else {
+        text = `Hi ${greetingName}! ${toParent ? `${studentName}'s` : 'Your'} lesson on ${formatDate(lesson.date)} at ${lesson.startTime} is confirmed. See you soon! Teacher Annette`;
       }
 
-      document.getElementById('waComposerText').dataset.template = type;
-      document.getElementById('waComposerText').value = text;
-      const encoded = encodeURIComponent(text);
+      const composer = document.getElementById('waComposerText');
+      composer.dataset.template = type;
+      composer.value = text;
 
-      if (!phone) {
-        document.getElementById('waSendAnchor').href = '#';
-        document.getElementById('waSendAnchor').setAttribute('onclick', "alert('No valid WhatsApp number was found for this contact. Please add a parent or student phone number first.'); return false;");
+      const anchor = document.getElementById('waSendAnchor');
+      anchor.dataset.phone = phone;
+      anchor.href = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : '#';
+      document.getElementById('waPhoneHint').textContent = phone
+        ? `Sending to +${phone}`
+        : `No ${toParent ? 'parent' : 'student'} phone number saved. Edit the student profile to add one.`;
+    }
+
+    function handleWaSendClick(e) {
+      const anchor = document.getElementById('waSendAnchor');
+      if (!anchor.dataset.phone) {
+        e.preventDefault();
+        alert('No WhatsApp number was found for this contact. Please add a parent or student phone number first.');
         return;
       }
-
-      document.getElementById('waSendAnchor').removeAttribute('onclick');
-      document.getElementById('waSendAnchor').href = `https://wa.me/${phone}?text=${encoded}`;
+      // Use the text as edited in the box, not only the template.
+      const text = document.getElementById('waComposerText').value;
+      anchor.href = `https://wa.me/${anchor.dataset.phone}?text=${encodeURIComponent(text)}`;
     }
 
     function updateWaRecipient() {
@@ -2851,85 +2857,86 @@
 
     function copyWaText() {
       const t = document.getElementById('waComposerText').value;
-      navigator.clipboard.writeText(t).then(() => triggerToast('Message copied!'));
+      navigator.clipboard.writeText(t)
+        .then(() => triggerToast('Message copied!'))
+        .catch(() => window.prompt('Copy this message:', t));
     }
 
     async function updatePaymentMethod(lessonId, method) {
       const l = lessons.find(les => les.id === lessonId);
-      if (l) {
-        l.method = method;
-        if (isBackendActive) {
-          try {
-            await fetch(`${API_BASE}/lessons`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(l)
-            });
-          } catch(e){}
-        }
-        persistData();
-        triggerToast('Payment method updated.');
-      }
+      if (!l) return;
+      l.method = method;
+      if (await syncLesson(l)) triggerToast('Payment method updated.');
     }
 
     async function quickTogglePay(lessonId) {
       const l = lessons.find(les => les.id === lessonId);
-      if (l) {
-        l.payment = (l.payment === 'Paid') ? 'Unpaid' : 'Paid';
-        if (isBackendActive) {
-          try {
-            await fetch(`${API_BASE}/lessons`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(l)
-            });
-          } catch(e){}
-        }
-        persistData();
-        triggerToast(`Updated payment for ${l.studentName}`);
-        refreshUI();
-        if (document.getElementById('tTabPayments').style.display === 'block') {
-          renderPaymentLedger();
-        }
+      if (!l) return;
+      l.payment = (l.payment === 'Paid') ? 'Unpaid' : 'Paid';
+      if (await syncLesson(l)) {
+        triggerToast(`${l.studentName}: marked ${l.payment === 'Paid' ? 'paid' : 'unpaid'}`);
       }
+      refreshUI();
     }
 
     /* Roster */
     function renderStudentRoster() {
       const tbody = document.getElementById('studentRosterTbody');
       if (students.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--slate-400);">No students registered yet. Students can register on the homepage, or you can click "+ Add Student" above.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--slate-400);">No students yet. Students can sign up on the homepage, or click "+ Add Student" above.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = students.map(s => {
+        const id = esc(s.id);
+        const joined = Boolean(s.hasAccount || s.password);
         return `
           <tr>
-            <td><strong>${s.name}</strong></td>
-            <td><span class="badge" style="background:#f1f5f9; color:var(--slate-700);">${s.grade}</span></td>
-            <td>${s.phone || 'N/A'}</td>
-            <td><strong>₪${s.rate}/hr</strong></td>
-            <td style="font-size:0.8rem; color:var(--slate-500); max-width:220px;">${s.notes || '-'}</td>
             <td>
-              <button class="wa-btn" onclick="openDirectStudentWa('${s.id}')">
-                💬 WhatsApp
+              <strong>${esc(s.name)}</strong>
+              <div style="margin-top:4px;">${joined
+                ? '<span class="badge badge-paid">✓ Joined</span>'
+                : '<span class="badge badge-unpaid">Not signed up yet</span>'}</div>
+            </td>
+            <td><span class="badge" style="background:#f1f5f9; color:var(--slate-700);">${esc(s.grade || '-')}</span></td>
+            <td style="font-size:0.85rem;">
+              ${s.parentName ? `<div><strong>${esc(s.parentName)}</strong></div>` : ''}
+              <div>${esc(s.parentPhone || s.phone || 'No parent phone')}</div>
+              ${s.studentPhone ? `<div style="color:var(--slate-500);">Student: ${esc(s.studentPhone)}</div>` : ''}
+            </td>
+            <td><strong>₪${esc(s.rate)}/hr</strong></td>
+            <td style="font-size:0.8rem; color:var(--slate-500); max-width:220px;">${esc(s.notes || '-')}</td>
+            <td>
+              <button class="wa-btn" onclick="openDirectStudentWa('${id}')">
+                💬 Message
               </button>
             </td>
-            <td>
-              <button class="action-icon-btn" onclick="copyStudentInviteLink('${s.id}')">Invite</button>
-              <button class="wa-btn" onclick="sendStudentInviteWa('${s.id}')" style="margin-left:6px;">💬 WhatsApp</button>
-              <button class="action-icon-btn" onclick="editStudent('${s.id}')" style="margin-left:6px;">Edit</button>
-              <button class="action-icon-btn" onclick="deleteStudent('${s.id}')" style="margin-left:6px; background:#fee2e2; color:#991b1b;">Delete</button>
+            <td style="white-space:nowrap;">
+              ${joined ? '' : `
+              <button class="action-icon-btn" onclick="copyStudentInviteLink('${id}')" title="Copy a sign-up link for this student">🔗 Copy Invite</button>
+              <button class="wa-btn" onclick="sendStudentInviteWa('${id}')" style="margin-left:6px;" title="Send the sign-up link on WhatsApp">📨 Send Invite</button>`}
+              <button class="action-icon-btn" onclick="editStudent('${id}')" style="margin-left:6px;">Edit</button>
+              <button class="action-icon-btn" onclick="deleteStudent('${id}')" style="margin-left:6px; background:#fee2e2; color:#991b1b;">Delete</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    function buildStudentInviteLink(student) {
+    async function buildStudentInviteLink(student) {
       if (!student) return '';
       if (!student.inviteCode) {
         student.inviteCode = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        if (isBackendActive) {
+          try {
+            await api('POST', '/students', student);
+          } catch (err) {
+            alert(`Could not create the invite link: ${err.message}`);
+            student.inviteCode = '';
+            return '';
+          }
+        }
+        persistData();
       }
       const base = window.location.origin + window.location.pathname;
       return `${base}?invite=${encodeURIComponent(student.inviteCode)}`;
@@ -2939,68 +2946,82 @@
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
-      const link = buildStudentInviteLink(student);
-      persistData();
+      const link = await buildStudentInviteLink(student);
+      if (!link) return;
 
       try {
         await navigator.clipboard.writeText(link);
         triggerToast(`Invite link copied for ${student.name}`);
       } catch (err) {
-        window.prompt(`Copy this student invite link:`, link);
+        window.prompt('Copy this student invite link:', link);
       }
       return link;
     }
 
-    function sendStudentInviteWa(studentId) {
+    async function sendStudentInviteWa(studentId) {
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
-      const link = buildStudentInviteLink(student);
-      const directPhone = normalizePhoneForWa(student.studentPhone || student.parentPhone || student.phone || student.wa || '');
+      const directPhone = normalizePhoneForWa(student.studentPhone || student.parentPhone || student.phone || '');
       if (!directPhone) {
-        alert('No valid WhatsApp number was found for this student. Please add a parent or student phone number first.');
+        alert('No WhatsApp number was found for this student. Please add a parent or student phone number first.');
         return;
       }
 
-      const message = `Hi ${student.name}! Please use this link to sign up for your lessons: ${link}`;
-      const url = `https://wa.me/${directPhone}?text=${encodeURIComponent(message)}`;
+      // Open the window first so the browser does not block it as a pop-up.
+      const win = window.open('', '_blank');
+      const link = await buildStudentInviteLink(student);
+      if (!link) {
+        if (win) win.close();
+        return;
+      }
 
-      persistData();
-      window.open(url, '_blank');
+      const message = `Hi ${student.name}! This is Teacher Annette. Please use this link to sign up for your lessons: ${link}`;
+      const url = `https://wa.me/${directPhone}?text=${encodeURIComponent(message)}`;
+      if (win) win.location.href = url; else window.location.href = url;
       triggerToast(`WhatsApp invite opened for ${student.name}`);
       return url;
     }
 
     function applyInviteFromUrl() {
+      if (session) return;
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       if (!inviteCode) return;
 
+      switchAuthTab('studentRegister');
       const student = students.find(s => s.inviteCode === inviteCode);
       if (!student) return;
 
-      switchAuthTab('studentRegister');
       document.getElementById('regStudentName').value = student.name || '';
       document.getElementById('regParentName').value = student.parentName || '';
       document.getElementById('regParentPhone').value = student.parentPhone || student.phone || '';
       document.getElementById('regStudentPhone').value = student.studentPhone || '';
       document.getElementById('regStudentGrade').value = student.grade || '';
       document.getElementById('regStudentNotes').value = student.notes || '';
-      document.getElementById('regStudentName').focus();
-      triggerToast(`Invite ready for ${student.name}. Complete your sign-up.`);
+      document.getElementById('regStudentPassword').focus();
+      triggerToast(`Hi ${student.name}! Choose a password to finish signing up.`);
     }
 
-    function deleteStudent(studentId) {
+    async function deleteStudent(studentId) {
       const student = students.find(s => s.id === studentId);
       if (!student) return;
-      const confirmed = confirm(`Delete student "${student.name}" and all their lessons/requests?`);
+      const confirmed = confirm(`Delete student "${student.name}" and all their lessons and messages? This cannot be undone.`);
       if (!confirmed) return;
+
+      if (isBackendActive) {
+        try {
+          await api('DELETE', `/students/${encodeURIComponent(studentId)}`);
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      }
 
       students = students.filter(s => s.id !== studentId);
       lessons = lessons.filter(l => l.studentId !== studentId);
       requests = requests.filter(r => r.studentId !== studentId);
       persistData();
-      renderStudentRoster();
       refreshUI();
       triggerToast('Student removed.');
     }
@@ -3008,39 +3029,79 @@
     function openDirectStudentWa(studentId) {
       const st = students.find(s => s.id === studentId);
       if (!st) return;
-      activeWaContext = { student: st, lesson: { day: 'our next lesson', date: '', startTime: '', rate: st.rate, method: 'Bit' } };
-      const recipientSelect = document.getElementById('waRecipientSelect');
-      if (recipientSelect) {
-        recipientSelect.value = st.studentPhone ? 'student' : 'parent';
-      }
-      setWaTemplate('confirm');
+      const next = upcomingLessons(st.id)[0] || null;
+      activeWaContext = { student: st, lesson: next };
+      document.getElementById('waRecipientSelect').value = st.studentPhone ? 'student' : 'parent';
+      setWaTemplate(next ? 'reminder' : 'general');
       openModal('waModal');
     }
 
-    function openLessonModal() {
+    function openLessonModal(isoDate) {
       if (students.length === 0) {
-        alert('You have no students registered yet! Please add a student first or have them sign up.');
+        alert('You have no students yet. Add a student first, then schedule their lessons.');
         openStudentModal();
         return;
       }
 
-      document.getElementById('lessonModalHeader').textContent = 'Add Private Lesson';
+      document.getElementById('lessonModalHeader').textContent = 'Add Lesson';
       document.getElementById('modalLessonId').value = '';
+      document.getElementById('modalLessonDeleteBtn').style.display = 'none';
 
+      // Default to the first day of the viewed week that is not in the past.
       const week = getWeekData(weekOffset);
-      document.getElementById('modalLessonDate').value = week.days[0].isoDate;
-      document.getElementById('modalLessonDay').value = week.days[0].dayName;
+      const today = todayIso();
+      const firstOpenDay = week.days.find(d => d.isoDate >= today);
+      const dateInput = document.getElementById('modalLessonDate');
+      dateInput.min = today;
+      dateInput.value = isoDate || (firstOpenDay ? firstOpenDay.isoDate : today);
+      updateModalDayHint();
+
       document.getElementById('modalLessonStart').value = '16:00';
       document.getElementById('modalLessonEnd').value = '17:00';
       document.getElementById('modalLessonTopic').value = '';
       document.getElementById('modalLessonPayment').value = 'Unpaid';
       document.getElementById('modalLessonStatus').value = 'Confirmed';
+      document.getElementById('modalLessonLocation').value = 'Studio (In-Person)';
 
       const mSelect = document.getElementById('modalLessonStudent');
-      mSelect.innerHTML = students.map(s => `<option value="${s.id}">👤 ${s.name} (${s.grade})</option>`).join('');
+      mSelect.innerHTML = students.map(s => `<option value="${esc(s.id)}">👤 ${esc(s.name)}${s.grade ? ` (${esc(s.grade)})` : ''}</option>`).join('');
 
       handleModalStudentChange();
       openModal('lessonModal');
+    }
+
+    function updateModalDayHint() {
+      const day = dayNameFromIso(document.getElementById('modalLessonDate').value);
+      document.getElementById('modalLessonDayHint').textContent = day ? `(${day})` : '';
+    }
+
+    function handleModalStartChange() {
+      const start = document.getElementById('modalLessonStart').value;
+      const endInput = document.getElementById('modalLessonEnd');
+      if (start && timeToMinutes(endInput.value) <= timeToMinutes(start)) {
+        endInput.value = minutesToTime(timeToMinutes(start) + 60);
+      }
+    }
+
+    async function deleteLessonFromModal() {
+      const id = document.getElementById('modalLessonId').value;
+      const lesson = lessons.find(l => l.id === id);
+      if (!lesson) return;
+      if (!confirm(`Delete ${lesson.studentName}'s lesson on ${formatDate(lesson.date)} at ${lesson.startTime}? To keep a record, set the status to Cancelled instead.`)) return;
+
+      if (isBackendActive) {
+        try {
+          await api('DELETE', `/lessons/${encodeURIComponent(id)}`);
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      }
+      lessons = lessons.filter(l => l.id !== id);
+      persistData();
+      closeModal('lessonModal');
+      refreshUI();
+      triggerToast('Lesson deleted.');
     }
 
     function timeToMinutes(value) {
@@ -3073,52 +3134,29 @@
       return true;
     }
 
-    function moveLessonToDay(lessonId, targetDayName, targetIsoDate, overrideStart = null, overrideEnd = null) {
+    async function moveLessonToDay(lessonId, targetIsoDate) {
       const lesson = lessons.find(l => l.id === lessonId);
-      if (!lesson) return;
+      if (!lesson || lesson.date === targetIsoDate) return;
 
       if (isPastDate(targetIsoDate)) {
         alert('You cannot move a lesson to a past date.');
         return;
       }
 
-      const currentWeek = getWeekData(weekOffset);
-      const targetDay = currentWeek.days.find(d => d.dayName === targetDayName && d.isoDate === targetIsoDate);
-      if (!targetDay) return;
-
-      const originalDate = lesson.date;
-      const originalDay = lesson.day;
-      const originalStart = lesson.startTime;
-      const originalEnd = lesson.endTime;
-
-      lesson.day = targetDayName;
-      lesson.date = targetIsoDate;
-      lesson.weekId = currentWeek.weekId;
-
-      const durationMinutes = timeToMinutes(originalEnd) - timeToMinutes(originalStart);
-      const nextStart = overrideStart || lesson.startTime;
-      const nextEnd = overrideEnd || minutesToTime(timeToMinutes(nextStart) + durationMinutes);
-      lesson.startTime = nextStart;
-      lesson.endTime = nextEnd;
-
-      if (hasLessonTimeConflict(lesson, lesson.id)) {
-        lesson.day = originalDay;
-        lesson.date = originalDate;
-        lesson.startTime = originalStart;
-        lesson.endTime = originalEnd;
-        alert('This move creates a time overlap. Move was cancelled.');
+      const moved = { ...lesson, date: targetIsoDate, day: dayNameFromIso(targetIsoDate), weekId: getWeekIdFromDate(targetIsoDate) };
+      const conflict = findLessonConflict(moved, lesson.id);
+      if (conflict) {
+        alert(`Cannot move: it overlaps with ${conflict.studentName}'s lesson at ${conflict.startTime}–${conflict.endTime}.`);
         return;
       }
 
-      persistData();
+      Object.assign(lesson, moved);
+      if (await syncLesson(lesson)) triggerToast(`Lesson moved to ${moved.day}.`);
       refreshUI();
-      triggerToast(`Lesson moved to ${targetDayName}.`);
     }
 
-    function quickAddForDay(dayName, isoDate) {
-      openLessonModal();
-      document.getElementById('modalLessonDay').value = dayName;
-      document.getElementById('modalLessonDate').value = isoDate;
+    function quickAddForDay(isoDate) {
+      openLessonModal(isoDate);
     }
 
     function handleModalStudentChange() {
@@ -3129,46 +3167,46 @@
 
     function editLesson(lessonId) {
       const l = lessons.find(les => les.id === lessonId);
-      if (!l) return;
+      if (!l) {
+        alert('This lesson no longer exists.');
+        return;
+      }
 
       document.getElementById('lessonModalHeader').textContent = 'Edit Lesson';
       document.getElementById('modalLessonId').value = l.id;
-      
+      document.getElementById('modalLessonDeleteBtn').style.display = 'inline-flex';
+
       const mSelect = document.getElementById('modalLessonStudent');
-      mSelect.innerHTML = students.map(s => `<option value="${s.id}" ${s.id === l.studentId ? 'selected' : ''}>👤 ${s.name} (${s.grade})</option>`).join('');
-      
-      document.getElementById('modalLessonDay').value = l.day;
-      document.getElementById('modalLessonDate').value = l.date;
+      mSelect.innerHTML = students.map(s => `<option value="${esc(s.id)}" ${s.id === l.studentId ? 'selected' : ''}>👤 ${esc(s.name)}${s.grade ? ` (${esc(s.grade)})` : ''}</option>`).join('');
+
+      const dateInput = document.getElementById('modalLessonDate');
+      dateInput.removeAttribute('min');
+      dateInput.value = l.date;
+      updateModalDayHint();
       document.getElementById('modalLessonStart').value = l.startTime;
       document.getElementById('modalLessonEnd').value = l.endTime;
       document.getElementById('modalLessonRate').value = l.rate;
-      document.getElementById('modalLessonPayment').value = l.payment;
+      document.getElementById('modalLessonPayment').value = l.payment || 'Unpaid';
       document.getElementById('modalLessonTopic').value = l.topic || '';
-      document.getElementById('modalLessonLocation').value = l.location;
-      document.getElementById('modalLessonStatus').value = l.status;
+      document.getElementById('modalLessonLocation').value = l.location || 'Studio (In-Person)';
+      document.getElementById('modalLessonStatus').value = l.status || 'Confirmed';
 
       openModal('lessonModal');
     }
 
-    function hasLessonTimeConflict(data, ignoreId = null) {
-      if (!data.date || !data.startTime || !data.endTime) return false;
-      const start = new Date(`${data.date}T${data.startTime}:00`);
-      const end = new Date(`${data.date}T${data.endTime}:00`);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
-        return false;
-      }
+    // Returns the first non-cancelled lesson that overlaps the given one, or null.
+    function findLessonConflict(data, ignoreId = null) {
+      if (!data.date || !data.startTime || !data.endTime || data.status === 'Cancelled') return null;
+      const start = timeToMinutes(data.startTime);
+      const end = timeToMinutes(data.endTime);
+      if (start >= end) return null;
 
-      return lessons.some(existing => {
+      return lessons.find(existing => {
         if (ignoreId && existing.id === ignoreId) return false;
-        if (!existing.date || !existing.startTime || !existing.endTime) return false;
-        if (existing.date !== data.date) return false;
-
-        const existingStart = new Date(`${existing.date}T${existing.startTime}:00`);
-        const existingEnd = new Date(`${existing.date}T${existing.endTime}:00`);
-        if (Number.isNaN(existingStart.getTime()) || Number.isNaN(existingEnd.getTime())) return false;
-
-        return start < existingEnd && end > existingStart;
-      });
+        if (existing.status === 'Cancelled') return false;
+        if (existing.date !== data.date || !existing.startTime || !existing.endTime) return false;
+        return start < timeToMinutes(existing.endTime) && end > timeToMinutes(existing.startTime);
+      }) || null;
     }
 
     async function handleLessonSave(e) {
@@ -3176,63 +3214,58 @@
       const editId = document.getElementById('modalLessonId').value;
       const studentId = document.getElementById('modalLessonStudent').value;
       const student = students.find(s => s.id === studentId);
-      const week = getWeekData(weekOffset);
+      const existing = editId ? lessons.find(l => l.id === editId) : null;
+      const date = document.getElementById('modalLessonDate').value;
 
       const data = {
         id: editId || ('l_' + Date.now()),
         studentId,
         studentName: student ? student.name : 'Student',
-        weekId: week.weekId,
-        day: document.getElementById('modalLessonDay').value,
-        date: document.getElementById('modalLessonDate').value,
+        weekId: getWeekIdFromDate(date),
+        day: dayNameFromIso(date),
+        date,
         startTime: document.getElementById('modalLessonStart').value,
         endTime: document.getElementById('modalLessonEnd').value,
         rate: Number(document.getElementById('modalLessonRate').value) || 0,
         payment: document.getElementById('modalLessonPayment').value,
-        method: 'Bit',
+        method: existing ? (existing.method || 'Bit') : 'Bit',
         topic: document.getElementById('modalLessonTopic').value.trim(),
         location: document.getElementById('modalLessonLocation').value,
         status: document.getElementById('modalLessonStatus').value
       };
 
-      if (!validateLessonDate(data.date, 'Lesson')) {
+      // Past dates are fine for an existing lesson that keeps its date (e.g. marking it completed).
+      const dateChanged = !existing || existing.date !== data.date;
+      if (dateChanged && !validateLessonDate(data.date, 'A lesson')) return;
+
+      if (timeToMinutes(data.endTime) <= timeToMinutes(data.startTime)) {
+        alert('End time must be after start time.');
         return;
       }
 
-      if (hasLessonTimeConflict(data, editId)) {
-        const conflict = lessons.find(existing => {
-          if (editId && existing.id === editId) return false;
-          if (existing.date !== data.date) return false;
-          const start = new Date(`${data.date}T${data.startTime}:00`);
-          const end = new Date(`${data.date}T${data.endTime}:00`);
-          const existingStart = new Date(`${existing.date}T${existing.startTime}:00`);
-          const existingEnd = new Date(`${existing.date}T${existing.endTime}:00`);
-          return start < existingEnd && end > existingStart;
-        });
-
-        alert(`Time conflict detected: ${student ? student.name : 'This student'} already has a lesson at ${conflict ? conflict.day + ' ' + conflict.startTime : 'that time'}. Please adjust the class timing.`);
+      const conflict = findLessonConflict(data, editId);
+      if (conflict) {
+        alert(`Time conflict: ${conflict.studentName} already has a lesson on ${formatDate(conflict.date)} at ${conflict.startTime}–${conflict.endTime}. Please choose another time.`);
         return;
       }
 
       if (isBackendActive) {
         try {
-          await fetch(`${API_BASE}/lessons`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          await loadFromBackend();
-        } catch(err) {
-          saveLocalLesson(editId, data);
+          await api('POST', '/lessons', data);
+        } catch (err) {
+          alert(err.message);
+          return;
         }
-      } else {
-        saveLocalLesson(editId, data);
       }
-
+      saveLocalLesson(editId, data);
       persistData();
       closeModal('lessonModal');
+
+      // Jump to the week of the saved lesson so the teacher sees it.
+      const target = new Date(`${data.date}T00:00:00`);
+      weekOffset = Math.round((target - BASE_WEEK_SUNDAY) / (7 * 86400000) - target.getDay() / 7);
       refreshUI();
-      triggerToast('Lesson saved successfully.');
+      triggerToast('Lesson saved.');
     }
 
     function saveLocalLesson(editId, data) {
@@ -3244,34 +3277,50 @@
       }
     }
 
-    function duplicateCurrentWeek() {
+    async function duplicateCurrentWeek() {
       const curWeek = getWeekData(weekOffset);
       const nextWeek = getWeekData(weekOffset + 1);
 
-      const curLessons = lessons.filter(l => l.weekId === curWeek.weekId);
+      const curLessons = lessonsInWeek(curWeek).filter(l => l.status !== 'Cancelled');
       if (curLessons.length === 0) {
-        alert('No lessons found in this week to duplicate.');
+        alert('There are no lessons this week to copy.');
         return;
       }
 
-      if (!confirm(`Duplicate all ${curLessons.length} lessons into next week (${nextWeek.label})?`)) return;
+      if (!confirm(`Copy ${curLessons.length} lesson(s) into next week (${nextWeek.label})? Lessons that would clash with existing ones are skipped.`)) return;
 
-      curLessons.forEach(l => {
-        const targetDay = nextWeek.days.find(d => d.dayName === l.day);
+      let copied = 0;
+      let skipped = 0;
+      for (const l of curLessons) {
+        const targetDay = nextWeek.days.find(d => d.dayName === dayNameFromIso(l.date));
         const copyItem = {
           ...l,
-          id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          weekId: nextWeek.weekId,
-          date: targetDay ? targetDay.isoDate : l.date,
+          id: 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          weekId: getWeekIdFromDate(targetDay.isoDate),
+          day: targetDay.dayName,
+          date: targetDay.isoDate,
           payment: 'Unpaid',
           status: 'Confirmed'
         };
+        if (isPastDate(copyItem.date) || findLessonConflict(copyItem)) {
+          skipped++;
+          continue;
+        }
+        if (isBackendActive) {
+          try {
+            await api('POST', '/lessons', copyItem);
+          } catch (err) {
+            skipped++;
+            continue;
+          }
+        }
         lessons.push(copyItem);
-      });
+        copied++;
+      }
 
       persistData();
       shiftWeek(1);
-      triggerToast('Schedule copied to next week!');
+      triggerToast(`Copied ${copied} lesson(s) to next week${skipped ? `, skipped ${skipped}` : ''}.`);
     }
 
     function openStudentModal() {
@@ -3291,89 +3340,76 @@
       const s = students.find(st => st.id === studentId);
       if (!s) return;
 
-      document.getElementById('studentModalHeader').textContent = 'Edit Student Profile';
+      document.getElementById('studentModalHeader').textContent = 'Edit Student';
       document.getElementById('modalStudentId').value = s.id;
-      document.getElementById('modalStudentName').value = s.name;
-      document.getElementById('modalStudentGrade').value = s.grade;
-      document.getElementById('modalStudentRate').value = s.rate;
+      document.getElementById('modalStudentName').value = s.name || '';
+      document.getElementById('modalStudentGrade').value = s.grade || '';
+      document.getElementById('modalStudentRate').value = s.rate ?? 220;
       document.getElementById('modalStudentParentName').value = s.parentName || '';
       document.getElementById('modalStudentPhone').value = s.parentPhone || s.phone || '';
       document.getElementById('modalStudentPhoneStudent').value = s.studentPhone || '';
-      document.getElementById('modalStudentNotes').value = s.notes;
+      document.getElementById('modalStudentNotes').value = s.notes || '';
       openModal('studentModal');
     }
 
     async function handleStudentSave(e) {
       e.preventDefault();
       const editId = document.getElementById('modalStudentId').value;
-      const parentName = document.getElementById('modalStudentParentName').value.trim();
+      const existing = editId ? students.find(s => s.id === editId) : null;
       const phoneRaw = document.getElementById('modalStudentPhone').value.trim();
-      const studentPhoneRaw = document.getElementById('modalStudentPhoneStudent').value.trim();
-      let cleanDigits = phoneRaw.replace(/\D/g, '');
-      if (cleanDigits.startsWith('0')) cleanDigits = '972' + cleanDigits.substring(1);
+      const rateValue = Number(document.getElementById('modalStudentRate').value);
 
       const data = {
         id: editId || ('s_' + Date.now()),
         name: document.getElementById('modalStudentName').value.trim(),
         grade: document.getElementById('modalStudentGrade').value.trim(),
-        rate: Number(document.getElementById('modalStudentRate').value) || 220,
-        parentName,
+        rate: Number.isFinite(rateValue) && rateValue >= 0 ? rateValue : 220,
+        parentName: document.getElementById('modalStudentParentName').value.trim(),
         parentPhone: phoneRaw,
-        studentPhone: studentPhoneRaw,
+        studentPhone: document.getElementById('modalStudentPhoneStudent').value.trim(),
         phone: phoneRaw,
-        wa: cleanDigits,
+        wa: normalizePhoneForWa(phoneRaw),
         notes: document.getElementById('modalStudentNotes').value.trim(),
-        password: '',
-        inviteCode: editId ? (students.find(s => s.id === editId)?.inviteCode || '') : ''
+        inviteCode: existing ? (existing.inviteCode || '') : ''
       };
+
+      if (!data.name) {
+        alert('Please enter the student name.');
+        return;
+      }
 
       if (isBackendActive) {
         try {
-          await fetch(`${API_BASE}/students`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          await loadFromBackend();
-        } catch(err) {
-          saveLocalStudent(editId, data);
+          await api('POST', '/students', data);
+        } catch (err) {
+          alert(err.message);
+          return;
         }
-      } else {
-        saveLocalStudent(editId, data);
       }
-
+      saveLocalStudent(editId, data);
       persistData();
       closeModal('studentModal');
-      renderStudentRoster();
       refreshUI();
-      triggerToast('Student profile saved.');
+      await loadFromBackend();
+      triggerToast(editId ? 'Student saved.' : `${data.name} added. Use "Send Invite" so they can sign in.`);
     }
 
     function saveLocalStudent(editId, data) {
-      if (editId) {
-        const idx = students.findIndex(s => s.id === editId);
-        if (idx !== -1) {
-          data.password = students[idx].password || '';
-          data.inviteCode = students[idx].inviteCode || data.inviteCode || '';
-          students[idx] = data;
-        }
+      const idx = editId ? students.findIndex(s => s.id === editId) : -1;
+      if (idx !== -1) {
+        const prev = students[idx];
+        students[idx] = { ...prev, ...data };
+        lessons.forEach(l => { if (l.studentId === editId) l.studentName = data.name; });
+        requests.forEach(r => { if (r.studentId === editId) r.studentName = data.name; });
       } else {
-        if (!data.inviteCode) {
-          data.inviteCode = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        }
-        students.push(data);
-        setTimeout(() => {
-          const link = buildStudentInviteLink(data);
-          if (link) {
-            const msg = `Student invite link created:\n${link}\n\nCopy it and send it to ${data.name}.`;
-            alert(msg);
-          }
-        }, 0);
+        students.push({ ...data, password: '' });
       }
     }
 
     function openModal(id) {
       document.getElementById(id).classList.add('show');
+      const first = document.querySelector(`#${id} input:not([type=hidden]), #${id} select, #${id} textarea`);
+      if (first) setTimeout(() => first.focus(), 50);
     }
 
     function closeModal(id) {
@@ -3391,32 +3427,58 @@
     }
 
     function importBackupFile(e) {
-      const file = e.target.files[0];
+      const input = e.target;
+      const file = input.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(evt) {
+      reader.onload = async function(evt) {
+        input.value = '';
+        let data;
         try {
-          const data = JSON.parse(evt.target.result);
-          if (data.students && data.lessons) {
-            students = data.students;
-            lessons = data.lessons;
-            requests = data.requests || [];
-            persistData();
-            triggerToast('Backup restored successfully!');
-            refreshUI();
-          }
+          data = JSON.parse(evt.target.result);
         } catch (err) {
-          alert('Invalid backup JSON format.');
+          alert('This file is not a valid backup.');
+          return;
         }
+        if (!Array.isArray(data.students) || !Array.isArray(data.lessons)) {
+          alert('This file is not a valid backup. It must contain students and lessons.');
+          return;
+        }
+        if (!confirm(`Restore ${data.students.length} students and ${data.lessons.length} lessons from this backup? Matching records will be overwritten.`)) return;
+
+        if (isBackendActive) {
+          try {
+            await api('POST', '/backup/import', { students: data.students, lessons: data.lessons, requests: data.requests || [] });
+          } catch (err) {
+            alert(`Restore failed: ${err.message}`);
+            return;
+          }
+          await loadFromBackend();
+        } else {
+          students = data.students;
+          lessons = data.lessons;
+          requests = data.requests || [];
+          persistData();
+          refreshUI();
+        }
+        triggerToast('Backup restored!');
       };
       reader.readAsText(file);
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      checkBackendConnection();
-      applyInviteFromUrl();
+    window.addEventListener('DOMContentLoaded', async () => {
       refreshUI();
+      await checkBackendConnection();
+      applyInviteFromUrl();
+    });
+
+    // Close pop-up windows with Escape or by clicking outside them.
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.show').forEach(m => m.classList.remove('show'));
+    });
+    document.addEventListener('click', e => {
+      if (e.target.classList && e.target.classList.contains('modal-backdrop')) e.target.classList.remove('show');
     });
   </script>
 </body>
