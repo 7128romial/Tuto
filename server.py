@@ -75,6 +75,16 @@ def init_db():
         password TEXT NOT NULL
     )
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS teachers (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
     
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS lessons (
@@ -130,6 +140,11 @@ class SignUpPayload(BaseModel):
     notes: Optional[str] = ""
     password: str
 
+class TeacherSignUpPayload(BaseModel):
+    name: str
+    email: str
+    password: str
+
 class LessonPayload(BaseModel):
     id: Optional[str] = None
     studentId: str
@@ -183,10 +198,23 @@ def login(payload: LoginPayload):
     cursor = conn.cursor()
     
     if payload.role == "teacher":
+        identifier = (payload.usernameOrId or "").strip()
+        normalized = identifier.lower()
+        cursor.execute("SELECT * FROM teachers WHERE email = ? OR name = ?", (normalized, identifier))
+        teacher = cursor.fetchone()
+        if teacher:
+            if teacher["password"] and teacher["password"] != payload.password:
+                conn.close()
+                raise HTTPException(status_code=401, detail="Incorrect teacher password.")
+            conn.close()
+            return {"role": "teacher", "teacherId": teacher["id"], "name": teacher["name"]}
+
+        if normalized in ["annette", "annette@lessons.com", "annette@lessons"] and payload.password in ["annette123", "annette", "admin"]:
+            conn.close()
+            return {"role": "teacher", "teacherId": "t_annette", "name": "Annette"}
+
         conn.close()
-        if payload.password in ["annette123", "annette", "admin"]:
-            return {"role": "teacher", "name": "Annette"}
-        raise HTTPException(status_code=401, detail="Invalid password for Teacher Annette (default: annette123)")
+        raise HTTPException(status_code=401, detail="Invalid teacher password or account not found.")
     else:
         cursor.execute("SELECT * FROM students WHERE id = ? OR name = ? OR phone = ?", 
                        (payload.usernameOrId, payload.usernameOrId, payload.usernameOrId))
@@ -197,6 +225,24 @@ def login(payload: LoginPayload):
         if student["password"] and student["password"] != payload.password:
             raise HTTPException(status_code=401, detail="Incorrect password. Please verify your password.")
         return {"role": "student", "studentId": student["id"], "name": student["name"]}
+
+@app.post("/api/auth/teacher/signup")
+def signup_teacher(payload: TeacherSignUpPayload):
+    conn = get_db()
+    cursor = conn.cursor()
+    normalized_email = payload.email.strip().lower()
+    cursor.execute("SELECT * FROM teachers WHERE email = ? OR name = ?", (normalized_email, payload.name.strip()))
+    existing = cursor.fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(status_code=409, detail="A teacher account with that email or name already exists.")
+
+    teacher_id = f"t_{int(time.time())}"
+    cursor.execute("INSERT INTO teachers (id, name, email, password) VALUES (?, ?, ?, ?)",
+                   (teacher_id, payload.name.strip(), normalized_email, payload.password))
+    conn.commit()
+    conn.close()
+    return {"role": "teacher", "teacherId": teacher_id, "name": payload.name.strip()}
 
 @app.post("/api/auth/signup")
 def signup(payload: SignUpPayload):

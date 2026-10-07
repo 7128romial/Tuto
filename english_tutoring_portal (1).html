@@ -1154,7 +1154,10 @@
             ✨ Student Sign Up
           </button>
           <button class="auth-tab-btn" id="tabBtnTeacherLogin" onclick="switchAuthTab('teacherLogin')">
-            👩‍🏫 Teacher Annette
+            👩‍🏫 Teacher Sign In
+          </button>
+          <button class="auth-tab-btn" id="tabBtnTeacherRegister" onclick="switchAuthTab('teacherRegister')">
+            📝 Teacher Sign Up
           </button>
         </div>
 
@@ -1221,14 +1224,39 @@
             <form onsubmit="handleTeacherSignIn(event)">
               <div class="form-group">
                 <label class="form-label">Teacher Annette's Username / Email:</label>
-                <input type="text" id="teacherEmailInput" class="input-field" value="annette@lessons.com" required>
+                <input type="text" id="teacherEmailInput" class="input-field" placeholder="Enter your teacher email or name" required>
               </div>
               <div class="form-group">
                 <label class="form-label">Password / PIN:</label>
-                <input type="password" id="teacherPassInput" class="input-field" value="annette123" required>
+                <input type="password" id="teacherPassInput" class="input-field" placeholder="Your teacher password" required>
               </div>
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
                 Sign In as Teacher Annette
+              </button>
+              <div style="text-align: center; margin-top: 14px;">
+                <span style="font-size: 0.82rem; color: var(--slate-500);">New teacher? </span>
+                <a href="javascript:void(0)" onclick="switchAuthTab('teacherRegister')" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none;">Create teacher account</a>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB 4: Teacher Sign Up -->
+          <div id="paneTeacherRegister" style="display: none;">
+            <form onsubmit="handleTeacherSignUp(event)">
+              <div class="form-group">
+                <label class="form-label">Teacher Full Name:</label>
+                <input type="text" id="teacherRegName" class="input-field" placeholder="E.g., Annette Cohen" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Teacher Email:</label>
+                <input type="email" id="teacherRegEmail" class="input-field" placeholder="annette@lessons.com" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Create Password:</label>
+                <input type="password" id="teacherRegPassword" class="input-field" placeholder="Choose a secure password" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                Create Teacher Account
               </button>
             </form>
           </div>
@@ -1742,6 +1770,7 @@
     let students = JSON.parse(localStorage.getItem('annette_students')) || [];
     let lessons = JSON.parse(localStorage.getItem('annette_lessons')) || [];
     let requests = JSON.parse(localStorage.getItem('annette_requests')) || [];
+    let teacherAccounts = JSON.parse(localStorage.getItem('annette_teacher_accounts')) || [];
     let session = JSON.parse(localStorage.getItem('annette_session')) || null;
     let weekOffset = 0;
     let activeWaContext = null;
@@ -1791,6 +1820,7 @@
       localStorage.setItem('annette_students', JSON.stringify(students));
       localStorage.setItem('annette_lessons', JSON.stringify(lessons));
       localStorage.setItem('annette_requests', JSON.stringify(requests));
+      localStorage.setItem('annette_teacher_accounts', JSON.stringify(teacherAccounts));
       localStorage.setItem('annette_session', JSON.stringify(session));
     }
 
@@ -1852,10 +1882,56 @@
       document.getElementById('tabBtnStudentLogin').classList.toggle('active', tab === 'studentLogin');
       document.getElementById('tabBtnStudentRegister').classList.toggle('active', tab === 'studentRegister');
       document.getElementById('tabBtnTeacherLogin').classList.toggle('active', tab === 'teacherLogin');
+      document.getElementById('tabBtnTeacherRegister').classList.toggle('active', tab === 'teacherRegister');
 
       document.getElementById('paneStudentLogin').style.display = (tab === 'studentLogin') ? 'block' : 'none';
       document.getElementById('paneStudentRegister').style.display = (tab === 'studentRegister') ? 'block' : 'none';
       document.getElementById('paneTeacherLogin').style.display = (tab === 'teacherLogin') ? 'block' : 'none';
+      document.getElementById('paneTeacherRegister').style.display = (tab === 'teacherRegister') ? 'block' : 'none';
+    }
+
+    async function handleTeacherSignUp(e) {
+      e.preventDefault();
+      const name = document.getElementById('teacherRegName').value.trim();
+      const email = document.getElementById('teacherRegEmail').value.trim();
+      const pass = document.getElementById('teacherRegPassword').value.trim();
+
+      if (!name || !email || !pass) {
+        alert('Please complete all teacher account fields.');
+        return;
+      }
+
+      if (isBackendActive) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/teacher/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password: pass })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.detail || 'Teacher registration failed');
+          session = { role: 'teacher', teacherId: data.teacherId, name: data.name };
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      } else {
+        const normalizedEmail = email.toLowerCase();
+        const exists = teacherAccounts.some(t => t.email.toLowerCase() === normalizedEmail || t.name.toLowerCase() === name.toLowerCase());
+        if (exists) {
+          alert('A teacher account with this email or name already exists.');
+          return;
+        }
+
+        const newTeacher = { id: 't_' + Date.now(), name, email: normalizedEmail, password: pass };
+        teacherAccounts.push(newTeacher);
+        session = { role: 'teacher', teacherId: newTeacher.id, name: newTeacher.name };
+      }
+
+      persistData();
+      triggerToast('Teacher account created');
+      switchAuthTab('teacherLogin');
+      refreshUI();
     }
 
     async function handleTeacherSignIn(e) {
@@ -1870,18 +1946,28 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ role: 'teacher', usernameOrId: user, password: pass })
           });
-          if (!res.ok) throw new Error((await res.json()).detail || 'Login failed');
-          session = await res.json();
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.detail || 'Login failed');
+          session = data;
         } catch (err) {
           alert(err.message);
           return;
         }
       } else {
-        if (pass !== 'annette123' && pass !== 'annette' && pass !== 'admin') {
-          alert('Invalid password for Teacher Annette. Default is: annette123');
+        const normalizedUser = user.toLowerCase();
+        const teacher = teacherAccounts.find(t => t.email.toLowerCase() === normalizedUser || t.name.toLowerCase() === normalizedUser);
+        if (teacher) {
+          if (teacher.password !== pass) {
+            alert('Incorrect teacher password.');
+            return;
+          }
+          session = { role: 'teacher', teacherId: teacher.id, name: teacher.name };
+        } else if (['annette', 'annette@lessons.com', 'annette@lessons'].includes(normalizedUser) && ['annette123', 'annette', 'admin'].includes(pass)) {
+          session = { role: 'teacher', teacherId: 't_annette', name: 'Annette' };
+        } else {
+          alert('Invalid teacher login. Please create a teacher account or use the default Annette login.');
           return;
         }
-        session = { role: 'teacher', name: 'Annette' };
       }
 
       persistData();
