@@ -2849,6 +2849,7 @@
             </td>
             <td>
               <button class="action-icon-btn" onclick="copyStudentInviteLink('${s.id}')">Invite</button>
+              <button class="wa-btn" onclick="sendStudentInviteWa('${s.id}')" style="margin-left:6px;">💬 WhatsApp</button>
               <button class="action-icon-btn" onclick="editStudent('${s.id}')" style="margin-left:6px;">Edit</button>
               <button class="action-icon-btn" onclick="deleteStudent('${s.id}')" style="margin-left:6px; background:#fee2e2; color:#991b1b;">Delete</button>
             </td>
@@ -2880,6 +2881,21 @@
         window.prompt(`Copy this student invite link:`, link);
       }
       return link;
+    }
+
+    function sendStudentInviteWa(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const link = buildStudentInviteLink(student);
+      const phone = (student.wa || student.phone || '').replace(/\D/g, '');
+      const message = `Hi ${student.name}! Please use this link to sign up for your lessons: ${link}`;
+      const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+
+      persistData();
+      window.open(url, '_blank');
+      triggerToast(`WhatsApp invite opened for ${student.name}`);
+      return url;
     }
 
     function applyInviteFromUrl() {
