@@ -1176,6 +1176,7 @@
                 <span style="font-size: 0.82rem; color: var(--slate-500);">New student? </span>
                 <a href="javascript:void(0)" onclick="switchAuthTab('studentRegister')" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: none;">Create an account</a>
                 <div style="font-size: 0.75rem; color: var(--slate-400); margin-top: 6px;">Teacher? Sign in here with your teacher username.</div>
+                <div style="font-size: 0.75rem; color: var(--slate-400); margin-top: 6px;">Forgot your password? Ask Teacher Annette for a new invite link.</div>
               </div>
             </form>
           </div>
@@ -1290,7 +1291,7 @@
           <form onsubmit="handleStudentRequestSubmit(event)">
             <div class="form-group">
               <label class="form-label">Which lesson?</label>
-              <select id="reqTargetLessonSelect" class="input-field">
+              <select id="reqTargetLessonSelect" class="input-field" onchange="this.dataset.picked = '1'">
                 <!-- Populated strictly with this student's lessons -->
               </select>
             </div>
@@ -1743,10 +1744,12 @@
   <!-- Application Logic -->
   <script>
     /* Clean Production State (No Dummy Data) */
-    let students = loadStored('annette_students', []);
-    let lessons = loadStored('annette_lessons', []);
-    let requests = loadStored('annette_requests', []);
+    let students = [];
+    let lessons = [];
+    let requests = [];
     let session = loadStored('annette_session', null);
+    // Remove data cached by older versions of this page.
+    try { ['annette_students', 'annette_lessons', 'annette_requests', 'annette_teacher_accounts'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
     let weekOffset = 0;
     let activeWaContext = null;
     let activeTeacherTab = 'schedule';
@@ -1767,49 +1770,69 @@
           isBackendActive = true;
           pill.textContent = '🟢 Online';
           pill.classList.add('online');
-          await loadFromBackend();
+          pill.title = '';
+          await restoreSession();
           return;
         }
       } catch (e) {
-        // Server unreachable, fall through to offline mode.
+        // Server unreachable.
       }
       isBackendActive = false;
-      pill.textContent = '⚡ Offline mode';
-      pill.title = 'Server not reachable. Changes are saved in this browser only.';
+      pill.textContent = '🔴 Offline';
+      pill.classList.remove('online');
+      pill.title = 'The server is not reachable. Please try again in a moment.';
+    }
+
+    // Checks that a saved sign-in is still valid, then loads data.
+    async function restoreSession() {
+      if (!session || !session.token) {
+        if (session) clearSession();
+        return;
+      }
+      try {
+        const me = await api('GET', '/auth/me');
+        session = { ...me, token: session.token };
+        persistData();
+        await loadFromBackend();
+      } catch (err) {
+        // api() already signs out on an expired session.
+      }
     }
 
     async function loadFromBackend() {
-      if (!isBackendActive) return;
+      if (!isBackendActive || !session || !session.token) return;
       try {
-        const isStudent = session && session.role === 'student';
-        const scope = isStudent ? `?studentId=${encodeURIComponent(session.studentId)}` : '';
-        const [stRes, lsRes, rqRes] = await Promise.all([
-          fetch(`${API_BASE}/students`),
-          fetch(`${API_BASE}/lessons${scope}`),
-          fetch(`${API_BASE}/requests${scope}`)
+        const [st, ls, rq] = await Promise.all([
+          api('GET', '/students'),
+          api('GET', '/lessons'),
+          api('GET', '/requests')
         ]);
-        if (stRes.ok) {
-          students = await stRes.json();
-          if (isStudent) students = students.filter(s => s.id === session.studentId);
-        }
-        if (lsRes.ok) lessons = await lsRes.json();
-        if (rqRes.ok) requests = await rqRes.json();
-        persistData();
+        students = st;
+        lessons = ls;
+        requests = rq;
         refreshUI();
       } catch (err) {
         console.warn('Backend sync error:', err);
       }
     }
 
+    // Only the sign-in token is kept in the browser. Lesson and student data stay on the server.
     function persistData() {
       try {
-        localStorage.setItem('annette_students', JSON.stringify(students));
-        localStorage.setItem('annette_lessons', JSON.stringify(lessons));
-        localStorage.setItem('annette_requests', JSON.stringify(requests));
         localStorage.setItem('annette_session', JSON.stringify(session));
       } catch (e) {
         console.warn('Could not save to browser storage:', e);
       }
+    }
+
+    function clearSession() {
+      session = null;
+      students = [];
+      lessons = [];
+      requests = [];
+      weekOffset = 0;
+      persistData();
+      refreshUI();
     }
 
     function loadStored(key, fallback) {
@@ -1825,27 +1848,33 @@
     }
 
     async function api(method, path, body) {
+      if (!isBackendActive) throw new Error('The server is not reachable. Please check your connection and try again.');
+      const headers = { 'Content-Type': 'application/json' };
+      if (session && session.token) headers.Authorization = `Bearer ${session.token}`;
       const res = await fetch(`${API_BASE}${path}`, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: body ? JSON.stringify(body) : undefined
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 401 && session && session.token) {
+        clearSession();
+        triggerToast('Your session ended. Please sign in again.');
+      }
       if (!res.ok) throw new Error(data.detail || 'The server could not save this change. Please try again.');
       return data;
     }
 
     // Saves one lesson. Returns false and reloads server data if the save fails.
     async function syncLesson(lesson) {
-      if (isBackendActive) {
-        try {
-          await api('POST', '/lessons', lesson);
-        } catch (err) {
-          alert(err.message);
-          await loadFromBackend();
-          return false;
-        }
+      try {
+        await api('POST', '/lessons', lesson);
+      } catch (err) {
+        alert(err.message);
+        await loadFromBackend();
+        return false;
       }
+    
       persistData();
       return true;
     }
@@ -1967,14 +1996,6 @@
     }
 
 
-    function setLocalTeacherSession(identifier, pass) {
-      const normalizedUser = identifier.toLowerCase();
-      if (['annette', 'annette@lessons.com', 'annette@lessons'].includes(normalizedUser) && ['annette123', 'annette', 'admin'].includes(pass)) {
-        session = { role: 'teacher', teacherId: 't_annette', name: 'Annette' };
-        return true;
-      }
-      return false;
-    }
 
     async function handleStudentSignIn(e) {
       e.preventDefault();
@@ -1986,42 +2007,16 @@
         return;
       }
 
-      if (isBackendActive) {
-        try {
-          session = await api('POST', '/auth/login', { role: 'teacher', usernameOrId: identifier, password: pass });
-        } catch (teacherErr) {
-          try {
-            session = await api('POST', '/auth/login', { role: 'student', usernameOrId: identifier, password: pass });
-          } catch (err) {
-            alert(err.message);
-            return;
-          }
-        }
-      } else if (!setLocalTeacherSession(identifier, pass)) {
-        const digits = normalizePhoneForWa(identifier);
-        const st = students.find(s =>
-          (s.name || '').trim().toLowerCase() === identifier.toLowerCase() ||
-          (digits && [s.phone, s.parentPhone, s.studentPhone].some(p => normalizePhoneForWa(p) === digits)) ||
-          s.id === identifier
-        );
-        if (!st) {
-          alert(`No account found for "${identifier}". Please check the spelling or sign up first.`);
-          return;
-        }
-        if (!st.password) {
-          alert('This account is not set up yet. Please use the invite link from Teacher Annette to sign up.');
-          return;
-        }
-        if (st.password !== pass) {
-          alert('Incorrect password. Please try again.');
-          return;
-        }
-        session = { role: 'student', studentId: st.id, name: st.name };
+      try {
+        session = await api('POST', '/auth/login', { usernameOrId: identifier, password: pass });
+      } catch (err) {
+        alert(err.message);
+        return;
       }
 
       document.getElementById('studentPassInput').value = '';
       persistData();
-      triggerToast(session.role === 'teacher' ? `Signed in as Teacher ${session.name || 'Annette'}` : `Welcome back, ${session.name}!`);
+      triggerToast(session.role === 'teacher' ? `Signed in as Teacher ${session.name}` : `Welcome back, ${session.name}!`);
       refreshUI();
       await loadFromBackend();
     }
@@ -2046,53 +2041,15 @@
         return;
       }
 
-      const cleanDigits = normalizePhoneForWa(parentPhone);
-
-      if (isBackendActive) {
-        try {
-          session = await api('POST', '/auth/signup', { name, grade, phone: parentPhone, parentName, parentPhone, studentPhone, notes, password: pass, inviteCode });
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
-      } else {
-        const studentDigits = normalizePhoneForWa(studentPhone);
-        const matchedStudent = students.find(s => {
-          if (inviteCode && s.inviteCode === inviteCode) return true;
-          if ((s.name || '').trim().toLowerCase() !== name.toLowerCase()) return false;
-          const phones = [s.phone, s.parentPhone, s.studentPhone].map(normalizePhoneForWa).filter(Boolean);
-          return phones.includes(cleanDigits) || (studentDigits && phones.includes(studentDigits));
-        });
-
-        if (matchedStudent) {
-          if (matchedStudent.password && matchedStudent.inviteCode !== inviteCode) {
-            alert('An account with this name and phone already exists. Please sign in instead.');
-            switchAuthTab('studentLogin');
-            return;
-          }
-          Object.assign(matchedStudent, {
-            password: pass,
-            grade: grade || matchedStudent.grade || 'Student',
-            notes: notes || matchedStudent.notes || '',
-            parentName,
-            parentPhone,
-            phone: parentPhone,
-            studentPhone: studentPhone || matchedStudent.studentPhone || '',
-            wa: cleanDigits,
-            rate: Number(matchedStudent.rate) || 220
-          });
-          session = { role: 'student', studentId: matchedStudent.id, name: matchedStudent.name };
-        } else {
-          const newStudent = {
-            id: 's_' + Date.now(),
-            name, grade: grade || 'Student', rate: 220, phone: parentPhone, parentName, parentPhone, studentPhone, wa: cleanDigits, notes, password: pass, inviteCode
-          };
-          students.push(newStudent);
-          session = { role: 'student', studentId: newStudent.id, name: newStudent.name };
-        }
+      try {
+        session = await api('POST', '/auth/signup', { name, grade, phone: parentPhone, parentName, parentPhone, studentPhone, notes, password: pass, inviteCode });
+      } catch (err) {
+        alert(err.message);
+        return;
       }
 
       if (inviteCode) window.history.replaceState({}, '', window.location.pathname);
+      document.getElementById('regStudentPassword').value = '';
       persistData();
       triggerToast(`Welcome, ${session.name}! Your account is ready.`);
       refreshUI();
@@ -2100,12 +2057,13 @@
     }
 
     async function handleSignOut() {
-      session = null;
-      weekOffset = 0;
-      persistData();
+      try {
+        await api('POST', '/auth/logout');
+      } catch (e) {
+        // Signing out locally is enough if the server is unreachable.
+      }
+      clearSession();
       triggerToast('Signed out.');
-      refreshUI();
-      await loadFromBackend();
     }
 
     function showTeacherTab(tab, btn) {
@@ -2289,7 +2247,7 @@
       }
 
       const targetSelect = document.getElementById('reqTargetLessonSelect');
-      const previous = targetSelect.options.length ? targetSelect.value : null;
+      const previous = targetSelect.dataset.picked ? targetSelect.value : null;
       targetSelect.innerHTML = myUpcoming.map(l => `
           <option value="${esc(l.id)}">${formatDate(l.date)} at ${esc(l.startTime)} · ${esc(l.topic || 'Lesson')}</option>
         `).join('') + `<option value="">General question (no specific lesson)</option>`;
@@ -2363,20 +2321,17 @@
         teacherReplyDate: null
       };
 
-      if (isBackendActive) {
-        try {
-          await api('POST', '/requests', newReq);
-        } catch (err) {
-          alert(`Your message was not sent: ${err.message}`);
-          return;
-        }
-        await loadFromBackend();
-      } else {
-        requests.unshift(newReq);
-        persistData();
+      try {
+        await api('POST', '/requests', newReq);
+      } catch (err) {
+        alert(`Your message was not sent: ${err.message}`);
+        return;
       }
+      await loadFromBackend();
+    
 
       document.getElementById('reqNoteText').value = '';
+      delete document.getElementById('reqTargetLessonSelect').dataset.picked;
       triggerToast('Message sent to Teacher Annette!');
       refreshUI();
     }
@@ -2631,14 +2586,13 @@
     }
 
     async function sendReply(reqId, text) {
-      if (isBackendActive) {
-        try {
-          await api('POST', `/requests/${encodeURIComponent(reqId)}/reply`, { reply: text, newStatus: 'Answered' });
-        } catch (err) {
-          alert(`The answer was not sent: ${err.message}`);
-          return false;
-        }
+      try {
+        await api('POST', `/requests/${encodeURIComponent(reqId)}/reply`, { reply: text, newStatus: 'Answered' });
+      } catch (err) {
+        alert(`The answer was not sent: ${err.message}`);
+        return false;
       }
+    
       updateLocalReq(reqId, text);
       return true;
     }
@@ -2915,6 +2869,7 @@
               ${joined ? '' : `
               <button class="action-icon-btn" onclick="copyStudentInviteLink('${id}')" title="Copy a sign-up link for this student">🔗 Copy Invite</button>
               <button class="wa-btn" onclick="sendStudentInviteWa('${id}')" style="margin-left:6px;" title="Send the sign-up link on WhatsApp">📨 Send Invite</button>`}
+              ${joined ? `<button class="action-icon-btn" onclick="resetStudentPassword('${id}')" title="Student forgot their password">Reset Password</button>` : ''}
               <button class="action-icon-btn" onclick="editStudent('${id}')" style="margin-left:6px;">Edit</button>
               <button class="action-icon-btn" onclick="deleteStudent('${id}')" style="margin-left:6px; background:#fee2e2; color:#991b1b;">Delete</button>
             </td>
@@ -2927,15 +2882,14 @@
       if (!student) return '';
       if (!student.inviteCode) {
         student.inviteCode = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        if (isBackendActive) {
-          try {
-            await api('POST', '/students', student);
-          } catch (err) {
-            alert(`Could not create the invite link: ${err.message}`);
-            student.inviteCode = '';
-            return '';
-          }
+        try {
+          await api('POST', '/students', student);
+        } catch (err) {
+          alert(`Could not create the invite link: ${err.message}`);
+          student.inviteCode = '';
+          return '';
         }
+      
         persistData();
       }
       const base = window.location.origin + window.location.pathname;
@@ -2983,24 +2937,47 @@
       return url;
     }
 
-    function applyInviteFromUrl() {
+    async function applyInviteFromUrl() {
       if (session) return;
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       if (!inviteCode) return;
 
       switchAuthTab('studentRegister');
-      const student = students.find(s => s.inviteCode === inviteCode);
-      if (!student) return;
+      let student;
+      try {
+        student = await api('GET', `/invite/${encodeURIComponent(inviteCode)}`);
+      } catch (err) {
+        alert(`${err.message} You can still create an account, or ask Teacher Annette for a new link.`);
+        window.history.replaceState({}, '', window.location.pathname);
+        return;
+      }
 
       document.getElementById('regStudentName').value = student.name || '';
       document.getElementById('regParentName').value = student.parentName || '';
-      document.getElementById('regParentPhone').value = student.parentPhone || student.phone || '';
+      document.getElementById('regParentPhone').value = student.parentPhone || '';
       document.getElementById('regStudentPhone').value = student.studentPhone || '';
       document.getElementById('regStudentGrade').value = student.grade || '';
       document.getElementById('regStudentNotes').value = student.notes || '';
       document.getElementById('regStudentPassword').focus();
       triggerToast(`Hi ${student.name}! Choose a password to finish signing up.`);
+    }
+
+    async function resetStudentPassword(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+      if (!confirm(`Reset ${student.name}'s password? They will be signed out and need a new invite link to choose a new password.`)) return;
+
+      try {
+        const res = await api('POST', `/students/${encodeURIComponent(studentId)}/reset-password`);
+        student.inviteCode = res.inviteCode;
+        student.hasAccount = 0;
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      refreshUI();
+      triggerToast(`Password reset. Send ${student.name} the new invite link.`);
     }
 
     async function deleteStudent(studentId) {
@@ -3009,14 +2986,13 @@
       const confirmed = confirm(`Delete student "${student.name}" and all their lessons and messages? This cannot be undone.`);
       if (!confirmed) return;
 
-      if (isBackendActive) {
-        try {
-          await api('DELETE', `/students/${encodeURIComponent(studentId)}`);
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
+      try {
+        await api('DELETE', `/students/${encodeURIComponent(studentId)}`);
+      } catch (err) {
+        alert(err.message);
+        return;
       }
+    
 
       students = students.filter(s => s.id !== studentId);
       lessons = lessons.filter(l => l.studentId !== studentId);
@@ -3089,14 +3065,13 @@
       if (!lesson) return;
       if (!confirm(`Delete ${lesson.studentName}'s lesson on ${formatDate(lesson.date)} at ${lesson.startTime}? To keep a record, set the status to Cancelled instead.`)) return;
 
-      if (isBackendActive) {
-        try {
-          await api('DELETE', `/lessons/${encodeURIComponent(id)}`);
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
+      try {
+        await api('DELETE', `/lessons/${encodeURIComponent(id)}`);
+      } catch (err) {
+        alert(err.message);
+        return;
       }
+    
       lessons = lessons.filter(l => l.id !== id);
       persistData();
       closeModal('lessonModal');
@@ -3249,14 +3224,13 @@
         return;
       }
 
-      if (isBackendActive) {
-        try {
-          await api('POST', '/lessons', data);
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
+      try {
+        await api('POST', '/lessons', data);
+      } catch (err) {
+        alert(err.message);
+        return;
       }
+    
       saveLocalLesson(editId, data);
       persistData();
       closeModal('lessonModal');
@@ -3306,14 +3280,13 @@
           skipped++;
           continue;
         }
-        if (isBackendActive) {
-          try {
-            await api('POST', '/lessons', copyItem);
-          } catch (err) {
-            skipped++;
-            continue;
-          }
+        try {
+          await api('POST', '/lessons', copyItem);
+        } catch (err) {
+          skipped++;
+          continue;
         }
+      
         lessons.push(copyItem);
         copied++;
       }
@@ -3378,14 +3351,13 @@
         return;
       }
 
-      if (isBackendActive) {
-        try {
-          await api('POST', '/students', data);
-        } catch (err) {
-          alert(err.message);
-          return;
-        }
+      try {
+        await api('POST', '/students', data);
+      } catch (err) {
+        alert(err.message);
+        return;
       }
+    
       saveLocalStudent(editId, data);
       persistData();
       closeModal('studentModal');
@@ -3447,21 +3419,14 @@
         }
         if (!confirm(`Restore ${data.students.length} students and ${data.lessons.length} lessons from this backup? Matching records will be overwritten.`)) return;
 
-        if (isBackendActive) {
-          try {
-            await api('POST', '/backup/import', { students: data.students, lessons: data.lessons, requests: data.requests || [] });
-          } catch (err) {
-            alert(`Restore failed: ${err.message}`);
-            return;
-          }
-          await loadFromBackend();
-        } else {
-          students = data.students;
-          lessons = data.lessons;
-          requests = data.requests || [];
-          persistData();
-          refreshUI();
+        try {
+          await api('POST', '/backup/import', { students: data.students, lessons: data.lessons, requests: data.requests || [] });
+        } catch (err) {
+          alert(`Restore failed: ${err.message}`);
+          return;
         }
+        await loadFromBackend();
+      
         triggerToast('Backup restored!');
       };
       reader.readAsText(file);
@@ -3470,7 +3435,7 @@
     window.addEventListener('DOMContentLoaded', async () => {
       refreshUI();
       await checkBackendConnection();
-      applyInviteFromUrl();
+      await applyInviteFromUrl();
     });
 
     // Close pop-up windows with Escape or by clicking outside them.

@@ -1,13 +1,15 @@
 
 import sqlite3
-import json
 import os
 import glob
 import time
 import uuid
+import hashlib
+import hmac
+import secrets
 from datetime import datetime
 from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -18,7 +20,7 @@ app = FastAPI(title="Annette's Private Lessons API", version="3.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -50,6 +52,78 @@ def phone_digits(value):
     if digits.startswith("0"):
         digits = "972" + digits[1:]
     return digits
+
+# Teacher login comes from environment variables, never from the page source.
+TEACHER_USERNAME = (os.environ.get("TEACHER_USERNAME") or "annette").strip().lower()
+TEACHER_NAME = (os.environ.get("TEACHER_NAME") or "Annette").strip()
+TEACHER_PASSWORD = os.environ.get("TEACHER_PASSWORD") or ""
+SESSION_DAYS = 30
+MAX_FAILED_LOGINS = 5
+FAILED_LOGIN_WINDOW = 15 * 60
+failed_logins = {}
+
+def hash_password(password):
+    salt = secrets.token_bytes(16)
+    iterations = 200_000
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations)
+    return f"pbkdf2${iterations}${salt.hex()}${digest.hex()}"
+
+def verify_password(stored, password):
+    """Returns (matches, needs_rehash). Accepts legacy plain-text passwords."""
+    if not stored:
+        return False, False
+    if stored.startswith("pbkdf2$"):
+        try:
+            _, iterations, salt_hex, digest_hex = stored.split("$")
+            digest = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt_hex), int(iterations))
+            return hmac.compare_digest(digest.hex(), digest_hex), False
+        except ValueError:
+            return False, False
+    matches = hmac.compare_digest(stored.encode(), password.encode())
+    return matches, matches
+
+def ensure_hashed(password):
+    if not password or password.startswith("pbkdf2$"):
+        return password or ""
+    return hash_password(password)
+
+def token_key(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+def check_login_throttle(identifier):
+    now = time.time()
+    attempts = [t for t in failed_logins.get(identifier, []) if now - t < FAILED_LOGIN_WINDOW]
+    failed_logins[identifier] = attempts
+    if len(attempts) >= MAX_FAILED_LOGINS:
+        raise HTTPException(status_code=429, detail="Too many failed sign-in attempts. Please wait 15 minutes and try again.")
+
+def record_failed_login(identifier):
+    failed_logins.setdefault(identifier, []).append(time.time())
+
+def create_session(cursor, role, user_id, name):
+    token = secrets.token_urlsafe(32)
+    cursor.execute("DELETE FROM sessions WHERE createdAt < ?", (time.time() - SESSION_DAYS * 86400,))
+    cursor.execute("INSERT INTO sessions (token, role, userId, name, createdAt) VALUES (?, ?, ?, ?, ?)",
+                   (token_key(token), role, user_id, name, time.time()))
+    return token
+
+def get_session(authorization: Optional[str] = Header(None)):
+    token = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Please sign in.")
+    conn = get_db()
+    row = conn.execute("SELECT * FROM sessions WHERE token = ?", (token_key(token),)).fetchone()
+    conn.close()
+    if not row or row["createdAt"] < time.time() - SESSION_DAYS * 86400:
+        raise HTTPException(status_code=401, detail="Your session has expired. Please sign in again.")
+    return dict(row)
+
+def require_teacher(session: dict = Depends(get_session)):
+    if session["role"] != "teacher":
+        raise HTTPException(status_code=403, detail="Only the teacher can do this.")
+    return session
 
 def get_db():
     candidates = [
@@ -147,13 +221,37 @@ def init_db():
     )
     """)
     
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        role TEXT NOT NULL,
+        userId TEXT NOT NULL,
+        name TEXT,
+        createdAt REAL NOT NULL
+    )
+    """)
+
+    if TEACHER_PASSWORD:
+        cursor.execute("""
+        INSERT INTO teachers (id, name, email, password) VALUES ('t_annette', ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email, password = excluded.password
+        """, (TEACHER_NAME, TEACHER_USERNAME, hash_password(TEACHER_PASSWORD)))
+    elif os.environ.get("RENDER") and not cursor.execute("SELECT 1 FROM teachers LIMIT 1").fetchone():
+        # Never use a known default password on the live site.
+        print("ERROR: TEACHER_PASSWORD is not set. Teacher sign-in is disabled until you set it in the Render dashboard.")
+    elif not cursor.execute("SELECT 1 FROM teachers LIMIT 1").fetchone():
+        print("WARNING: TEACHER_PASSWORD is not set. Using the default teacher password 'annette123'. "
+              "Set TEACHER_PASSWORD in your hosting environment.")
+        cursor.execute("INSERT INTO teachers (id, name, email, password) VALUES ('t_annette', ?, ?, ?)",
+                       (TEACHER_NAME, TEACHER_USERNAME, hash_password("annette123")))
+
     conn.commit()
     conn.close()
 
 init_db()
 
 class LoginPayload(BaseModel):
-    role: str
+    role: Optional[str] = None
     usernameOrId: str
     password: str
 
@@ -240,45 +338,83 @@ def health():
 
 @app.post("/api/auth/login")
 def login(payload: LoginPayload):
+    identifier = (payload.usernameOrId or "").strip()
+    throttle_key = identifier.lower()
+    check_login_throttle(throttle_key)
+
     conn = get_db()
     cursor = conn.cursor()
-    
-    if payload.role == "teacher":
-        identifier = (payload.usernameOrId or "").strip()
-        normalized = identifier.lower()
-        cursor.execute("SELECT * FROM teachers WHERE email = ? OR name = ?", (normalized, identifier))
-        teacher = cursor.fetchone()
-        if teacher:
-            if teacher["password"] and teacher["password"] != payload.password:
-                conn.close()
-                raise HTTPException(status_code=401, detail="Incorrect teacher password.")
-            conn.close()
-            return {"role": "teacher", "teacherId": teacher["id"], "name": teacher["name"]}
 
-        if normalized in ["annette", "annette@lessons.com", "annette@lessons"] and payload.password in ["annette123", "annette", "admin"]:
+    teacher = cursor.execute("SELECT * FROM teachers WHERE LOWER(email) = ? OR LOWER(name) = ?",
+                             (identifier.lower(), identifier.lower())).fetchone()
+    if teacher:
+        matches, needs_rehash = verify_password(teacher["password"], payload.password)
+        if not matches:
             conn.close()
-            return {"role": "teacher", "teacherId": "t_annette", "name": "Annette"}
+            record_failed_login(throttle_key)
+            raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
+        if needs_rehash:
+            cursor.execute("UPDATE teachers SET password = ? WHERE id = ?", (hash_password(payload.password), teacher["id"]))
+        token = create_session(cursor, "teacher", teacher["id"], teacher["name"])
+        conn.commit()
+        conn.close()
+        failed_logins.pop(throttle_key, None)
+        return {"role": "teacher", "teacherId": teacher["id"], "name": teacher["name"], "token": token}
 
+    digits = phone_digits(identifier)
+    student = None
+    for row in cursor.execute("SELECT * FROM students").fetchall():
+        phones = {phone_digits(row["phone"]), phone_digits(row["parentPhone"]), phone_digits(row["studentPhone"]), row["wa"] or ""}
+        phones.discard("")
+        if row["id"] == identifier or (row["name"] or "").strip().lower() == identifier.lower() or (digits and digits in phones):
+            student = row
+            break
+
+    if not student:
         conn.close()
-        raise HTTPException(status_code=401, detail="Invalid teacher password or account not found.")
-    else:
-        identifier = (payload.usernameOrId or "").strip()
-        digits = phone_digits(identifier)
-        student = None
-        for row in cursor.execute("SELECT * FROM students").fetchall():
-            phones = {phone_digits(row["phone"]), phone_digits(row["parentPhone"]), phone_digits(row["studentPhone"]), row["wa"] or ""}
-            phones.discard("")
-            if row["id"] == identifier or (row["name"] or "").strip().lower() == identifier.lower() or (digits and digits in phones):
-                student = row
-                break
+        record_failed_login(throttle_key)
+        raise HTTPException(status_code=404, detail="No account found. Check the spelling or click 'Create an account'.")
+    if not student["password"]:
         conn.close()
-        if not student:
-            raise HTTPException(status_code=404, detail="No account found. Check the spelling or click 'Create an account'.")
-        if not student["password"]:
-            raise HTTPException(status_code=403, detail="This account is not set up yet. Please use the invite link from Teacher Annette to sign up.")
-        if student["password"] != payload.password:
-            raise HTTPException(status_code=401, detail="Incorrect password. Please verify your password.")
-        return {"role": "student", "studentId": student["id"], "name": student["name"]}
+        raise HTTPException(status_code=403, detail="This account is not set up yet. Please use the invite link from Teacher Annette to sign up.")
+    matches, needs_rehash = verify_password(student["password"], payload.password)
+    if not matches:
+        conn.close()
+        record_failed_login(throttle_key)
+        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
+    if needs_rehash:
+        cursor.execute("UPDATE students SET password = ? WHERE id = ?", (hash_password(payload.password), student["id"]))
+    token = create_session(cursor, "student", student["id"], student["name"])
+    conn.commit()
+    conn.close()
+    failed_logins.pop(throttle_key, None)
+    return {"role": "student", "studentId": student["id"], "name": student["name"], "token": token}
+
+@app.post("/api/auth/logout")
+def logout(authorization: Optional[str] = Header(None)):
+    if authorization and authorization.lower().startswith("bearer "):
+        conn = get_db()
+        conn.execute("DELETE FROM sessions WHERE token = ?", (token_key(authorization[7:].strip()),))
+        conn.commit()
+        conn.close()
+    return {"status": "signed_out"}
+
+@app.get("/api/auth/me")
+def me(session: dict = Depends(get_session)):
+    if session["role"] == "teacher":
+        return {"role": "teacher", "teacherId": session["userId"], "name": session["name"]}
+    return {"role": "student", "studentId": session["userId"], "name": session["name"]}
+
+@app.get("/api/invite/{invite_code}")
+def get_invite(invite_code: str):
+    conn = get_db()
+    row = conn.execute("SELECT name, grade, notes, parentName, parentPhone, phone, studentPhone, password FROM students WHERE inviteCode = ? AND inviteCode != ''",
+                       (invite_code,)).fetchone()
+    conn.close()
+    if not row or row["password"]:
+        raise HTTPException(status_code=404, detail="This invite link is not valid or was already used.")
+    return {"name": row["name"], "grade": row["grade"] or "", "notes": row["notes"] or "", "parentName": row["parentName"] or "",
+            "parentPhone": row["parentPhone"] or row["phone"] or "", "studentPhone": row["studentPhone"] or ""}
 
 @app.post("/api/auth/signup")
 def signup(payload: SignUpPayload):
@@ -312,35 +448,39 @@ def signup(payload: SignUpPayload):
         cursor.execute(
             "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ?, parentName = ?, parentPhone = ?, studentPhone = ? WHERE id = ?",
             (payload.grade or existing["grade"], parent_phone_value or existing["phone"], clean_digits or existing["wa"],
-             payload.notes or existing["notes"] or "", payload.password,
+             payload.notes or existing["notes"] or "", hash_password(payload.password),
              payload.parentName or existing["parentName"], parent_phone_value or existing["parentPhone"],
              student_phone_value or existing["studentPhone"], existing["id"])
         )
+        token = create_session(cursor, "student", existing["id"], existing["name"])
         conn.commit()
         conn.close()
-        return {"role": "student", "studentId": existing["id"], "name": existing["name"]}
+        return {"role": "student", "studentId": existing["id"], "name": existing["name"], "token": token}
 
     student_id = new_id("s")
     cursor.execute("""
     INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone, studentPhone)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (student_id, payload.name.strip(), payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, payload.password, invite_code, payload.parentName or "", parent_phone_value, student_phone_value))
+    """, (student_id, payload.name.strip(), payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, hash_password(payload.password), invite_code, payload.parentName or "", parent_phone_value, student_phone_value))
+    token = create_session(cursor, "student", student_id, payload.name.strip())
     conn.commit()
     conn.close()
 
-    return {"role": "student", "studentId": student_id, "name": payload.name.strip()}
+    return {"role": "student", "studentId": student_id, "name": payload.name.strip(), "token": token}
 
 @app.get("/api/students")
-def list_students():
+def list_students(session: dict = Depends(get_session)):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode, parentName, parentPhone, studentPhone, CASE WHEN COALESCE(password, '') != '' THEN 1 ELSE 0 END AS hasAccount FROM students ORDER BY name ASC")
+    only_own = " WHERE id = ?" if session["role"] == "student" else ""
+    params = (session["userId"],) if only_own else ()
+    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode, parentName, parentPhone, studentPhone, CASE WHEN COALESCE(password, '') != '' THEN 1 ELSE 0 END AS hasAccount FROM students" + only_own + " ORDER BY name ASC", params)
     items = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return items
 
 @app.post("/api/students")
-def save_student(payload: StudentPayload):
+def save_student(payload: StudentPayload, session: dict = Depends(require_teacher)):
     conn = get_db()
     cursor = conn.cursor()
     parent_phone_value = (payload.parentPhone or payload.phone or "").strip()
@@ -367,9 +507,10 @@ def save_student(payload: StudentPayload):
     return {"id": student_id, "status": "saved"}
 
 @app.delete("/api/students/{student_id}")
-def delete_student(student_id: str):
+def delete_student(student_id: str, session: dict = Depends(require_teacher)):
     conn = get_db()
     cursor = conn.cursor()
+    cursor.execute("DELETE FROM sessions WHERE role = 'student' AND userId = ?", (student_id,))
     cursor.execute("DELETE FROM requests WHERE studentId = ?", (student_id,))
     cursor.execute("DELETE FROM lessons WHERE studentId = ?", (student_id,))
     cursor.execute("DELETE FROM students WHERE id = ?", (student_id,))
@@ -377,8 +518,25 @@ def delete_student(student_id: str):
     conn.close()
     return {"status": "deleted"}
 
+@app.post("/api/students/{student_id}/reset-password")
+def reset_student_password(student_id: str, session: dict = Depends(require_teacher)):
+    """Clears the password and issues a new invite link so the student can choose a new one."""
+    conn = get_db()
+    cursor = conn.cursor()
+    if not cursor.execute("SELECT 1 FROM students WHERE id = ?", (student_id,)).fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found.")
+    invite_code = f"inv_{secrets.token_urlsafe(12)}"
+    cursor.execute("UPDATE students SET password = '', inviteCode = ? WHERE id = ?", (invite_code, student_id))
+    cursor.execute("DELETE FROM sessions WHERE role = 'student' AND userId = ?", (student_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "reset", "inviteCode": invite_code}
+
 @app.get("/api/lessons")
-def list_lessons(weekId: Optional[str] = None, studentId: Optional[str] = None):
+def list_lessons(weekId: Optional[str] = None, studentId: Optional[str] = None, session: dict = Depends(get_session)):
+    if session["role"] == "student":
+        studentId = session["userId"]
     conn = get_db()
     cursor = conn.cursor()
     query = "SELECT * FROM lessons WHERE 1=1"
@@ -395,7 +553,7 @@ def list_lessons(weekId: Optional[str] = None, studentId: Optional[str] = None):
     return items
 
 @app.post("/api/lessons")
-def save_lesson(lesson: LessonPayload):
+def save_lesson(lesson: LessonPayload, session: dict = Depends(require_teacher)):
     try:
         lesson_date = datetime.strptime(lesson.date, "%Y-%m-%d").date()
     except ValueError:
@@ -425,7 +583,7 @@ def save_lesson(lesson: LessonPayload):
     return {"id": lid, "status": "saved"}
 
 @app.delete("/api/lessons/{lesson_id}")
-def delete_lesson(lesson_id: str):
+def delete_lesson(lesson_id: str, session: dict = Depends(require_teacher)):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM lessons WHERE id = ?", (lesson_id,))
@@ -434,7 +592,9 @@ def delete_lesson(lesson_id: str):
     return {"status": "deleted"}
 
 @app.get("/api/requests")
-def list_requests(studentId: Optional[str] = None):
+def list_requests(studentId: Optional[str] = None, session: dict = Depends(get_session)):
+    if session["role"] == "student":
+        studentId = session["userId"]
     conn = get_db()
     cursor = conn.cursor()
     if studentId:
@@ -446,9 +606,20 @@ def list_requests(studentId: Optional[str] = None):
     return items
 
 @app.post("/api/requests")
-def create_request(req: RequestPayload):
+def create_request(req: RequestPayload, session: dict = Depends(get_session)):
     conn = get_db()
     cursor = conn.cursor()
+    if session["role"] == "student":
+        # Students can only send messages as themselves, about their own lessons.
+        student = cursor.execute("SELECT id, name FROM students WHERE id = ?", (session["userId"],)).fetchone()
+        if not student:
+            conn.close()
+            raise HTTPException(status_code=401, detail="Please sign in again.")
+        if req.lessonId and not cursor.execute("SELECT 1 FROM lessons WHERE id = ? AND studentId = ?", (req.lessonId, student["id"])).fetchone():
+            conn.close()
+            raise HTTPException(status_code=403, detail="You can only send messages about your own lessons.")
+        req.studentId = student["id"]
+        req.studentName = student["name"]
     rid = new_id("req")
     now_iso = datetime.utcnow().isoformat() + "Z"
     
@@ -461,7 +632,7 @@ def create_request(req: RequestPayload):
     return {"id": rid, "status": "submitted"}
 
 @app.post("/api/requests/{request_id}/reply")
-def reply_request(request_id: str, payload: ReplyPayload):
+def reply_request(request_id: str, payload: ReplyPayload, session: dict = Depends(require_teacher)):
     conn = get_db()
     cursor = conn.cursor()
     now_iso = datetime.utcnow().isoformat() + "Z"
@@ -497,7 +668,7 @@ def reply_request(request_id: str, payload: ReplyPayload):
     return {"status": "replied"}
 
 @app.post("/api/backup/import")
-def import_backup(payload: BackupPayload):
+def import_backup(payload: BackupPayload, session: dict = Depends(require_teacher)):
     conn = get_db()
     cursor = conn.cursor()
     for s in payload.students:
@@ -511,7 +682,7 @@ def import_backup(payload: BackupPayload):
             parentPhone = excluded.parentPhone, studentPhone = excluded.studentPhone,
             password = COALESCE(NULLIF(excluded.password, ''), students.password)
         """, (s["id"], s["name"], s.get("grade") or "", s.get("rate") or 220.0, s.get("phone") or "", s.get("wa") or "",
-              s.get("notes") or "", s.get("password") or "", s.get("inviteCode") or "", s.get("parentName") or "",
+              s.get("notes") or "", ensure_hashed(s.get("password") or ""), s.get("inviteCode") or "", s.get("parentName") or "",
               s.get("parentPhone") or "", s.get("studentPhone") or ""))
     lesson_cols = ["id", "studentId", "studentName", "weekId", "day", "date", "startTime", "endTime", "rate", "payment", "method", "status", "topic", "location"]
     for l in payload.lessons:
