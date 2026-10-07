@@ -9,3 +9,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: TEACHER_USERNAME
+        value: annette
+      - key: TEACHER_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false
