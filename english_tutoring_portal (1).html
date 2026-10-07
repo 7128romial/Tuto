@@ -1954,6 +1954,7 @@
       const pass = document.getElementById('regStudentPassword').value.trim();
       const phone = document.getElementById('regStudentPhone').value.trim();
       const notes = document.getElementById('regStudentNotes').value.trim();
+      const inviteCode = new URLSearchParams(window.location.search).get('invite');
 
       if (!name || !phone || !pass) {
         alert('Please complete the student name, phone number, and password.');
@@ -1967,7 +1968,8 @@
         const sName = (s.name || '').trim().toLowerCase();
         const sPhone = (s.phone || '').replace(/\D/g, '');
         const normalizedPhone = cleanDigits.startsWith('972') ? cleanDigits : (cleanDigits.startsWith('0') ? '972' + cleanDigits.substring(1) : cleanDigits);
-        return sName === name.toLowerCase() && sPhone === normalizedPhone;
+        const linkedByInvite = inviteCode && s.inviteCode === inviteCode;
+        return linkedByInvite || (sName === name.toLowerCase() && sPhone === normalizedPhone);
       });
 
       if (matchedStudent) {
@@ -1977,6 +1979,7 @@
         matchedStudent.wa = cleanDigits;
         matchedStudent.phone = phone;
         matchedStudent.rate = Number(matchedStudent.rate) || 220;
+        if (inviteCode) matchedStudent.inviteCode = inviteCode;
         students = students.map(s => s.id === matchedStudent.id ? matchedStudent : s);
         session = { role: 'student', studentId: matchedStudent.id, name: matchedStudent.name };
         persistData();
@@ -2845,12 +2848,55 @@
               </button>
             </td>
             <td>
-              <button class="action-icon-btn" onclick="editStudent('${s.id}')">Edit</button>
+              <button class="action-icon-btn" onclick="copyStudentInviteLink('${s.id}')">Invite</button>
+              <button class="action-icon-btn" onclick="editStudent('${s.id}')" style="margin-left:6px;">Edit</button>
               <button class="action-icon-btn" onclick="deleteStudent('${s.id}')" style="margin-left:6px; background:#fee2e2; color:#991b1b;">Delete</button>
             </td>
           </tr>
         `;
       }).join('');
+    }
+
+    function buildStudentInviteLink(student) {
+      if (!student) return '';
+      if (!student.inviteCode) {
+        student.inviteCode = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      }
+      const base = window.location.origin + window.location.pathname;
+      return `${base}?invite=${encodeURIComponent(student.inviteCode)}`;
+    }
+
+    async function copyStudentInviteLink(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const link = buildStudentInviteLink(student);
+      persistData();
+
+      try {
+        await navigator.clipboard.writeText(link);
+        triggerToast(`Invite link copied for ${student.name}`);
+      } catch (err) {
+        window.prompt(`Copy this student invite link:`, link);
+      }
+      return link;
+    }
+
+    function applyInviteFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const inviteCode = params.get('invite');
+      if (!inviteCode) return;
+
+      const student = students.find(s => s.inviteCode === inviteCode);
+      if (!student) return;
+
+      switchAuthTab('studentRegister');
+      document.getElementById('regStudentName').value = student.name || '';
+      document.getElementById('regStudentPhone').value = student.phone || '';
+      document.getElementById('regStudentGrade').value = student.grade || '';
+      document.getElementById('regStudentNotes').value = student.notes || '';
+      document.getElementById('regStudentName').focus();
+      triggerToast(`Invite ready for ${student.name}. Complete your sign-up.`);
     }
 
     function deleteStudent(studentId) {
@@ -3173,7 +3219,8 @@
         phone: phoneRaw,
         wa: cleanDigits,
         notes: document.getElementById('modalStudentNotes').value.trim(),
-        password: 'student123'
+        password: '',
+        inviteCode: editId ? (students.find(s => s.id === editId)?.inviteCode || '') : ''
       };
 
       if (isBackendActive) {
@@ -3202,11 +3249,22 @@
       if (editId) {
         const idx = students.findIndex(s => s.id === editId);
         if (idx !== -1) {
-          data.password = students[idx].password || 'student123';
+          data.password = students[idx].password || '';
+          data.inviteCode = students[idx].inviteCode || data.inviteCode || '';
           students[idx] = data;
         }
       } else {
+        if (!data.inviteCode) {
+          data.inviteCode = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        }
         students.push(data);
+        setTimeout(() => {
+          const link = buildStudentInviteLink(data);
+          if (link) {
+            const msg = `Student invite link created:\n${link}\n\nCopy it and send it to ${data.name}.`;
+            alert(msg);
+          }
+        }, 0);
       }
     }
 
@@ -3253,6 +3311,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       checkBackendConnection();
+      applyInviteFromUrl();
       refreshUI();
     });
   </script>

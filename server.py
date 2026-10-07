@@ -72,9 +72,14 @@ def init_db():
         phone TEXT,
         wa TEXT,
         notes TEXT,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        inviteCode TEXT
     )
     """)
+
+    student_columns = [row[1] for row in cursor.execute("PRAGMA table_info(students)").fetchall()]
+    if 'inviteCode' not in student_columns:
+        cursor.execute("ALTER TABLE students ADD COLUMN inviteCode TEXT")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS teachers (
@@ -139,6 +144,7 @@ class SignUpPayload(BaseModel):
     phone: str
     notes: Optional[str] = ""
     password: str
+    inviteCode: Optional[str] = ""
 
 class LessonPayload(BaseModel):
     id: Optional[str] = None
@@ -242,8 +248,8 @@ def signup(payload: SignUpPayload):
 
     if existing:
         cursor.execute(
-            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ? WHERE id = ?",
-            (payload.grade, payload.phone, clean_digits, payload.notes or '', payload.password, existing["id"])
+            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ?, inviteCode = COALESCE(?, inviteCode) WHERE id = ?",
+            (payload.grade, payload.phone, clean_digits, payload.notes or '', payload.password, payload.inviteCode or existing["inviteCode"], existing["id"])
         )
         conn.commit()
         conn.close()
@@ -251,9 +257,9 @@ def signup(payload: SignUpPayload):
 
     new_id = f"s_{int(time.time())}"
     cursor.execute("""
-    INSERT INTO students (id, name, grade, rate, phone, wa, notes, password)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (new_id, payload.name, payload.grade, 220.0, payload.phone, clean_digits, payload.notes, payload.password))
+    INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (new_id, payload.name, payload.grade, 220.0, payload.phone, clean_digits, payload.notes, payload.password, payload.inviteCode or ""))
     conn.commit()
     conn.close()
     
@@ -263,7 +269,7 @@ def signup(payload: SignUpPayload):
 def list_students():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes FROM students ORDER BY name ASC")
+    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode FROM students ORDER BY name ASC")
     items = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return items
