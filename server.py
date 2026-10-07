@@ -135,7 +135,7 @@ USE_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
 CAMEL_COLUMNS = {name.lower(): name for name in [
     "studentId", "studentName", "weekId", "startTime", "endTime", "inviteCode", "parentName", "parentPhone",
     "studentPhone", "lessonId", "lessonSummary", "requestType", "dateSubmitted", "teacherReply",
-    "teacherReplyDate", "createdAt", "userId", "hasAccount",
+    "teacherReplyDate", "createdAt", "userId", "hasAccount", "envPasswordMark",
 ]}
 
 def camel_row_factory(cursor):
@@ -292,11 +292,25 @@ def init_db():
     )
     """)
 
+    # envPasswordMark remembers which TEACHER_PASSWORD was last applied. A password changed
+    # in the app survives restarts, while a new TEACHER_PASSWORD value still overrides it
+    # (the way to recover a forgotten password).
+    if USE_POSTGRES:
+        cursor.execute("ALTER TABLE teachers ADD COLUMN IF NOT EXISTS envPasswordMark TEXT")
+    elif "envPasswordMark" not in [row[1] for row in cursor.execute("PRAGMA table_info(teachers)").fetchall()]:
+        cursor.execute("ALTER TABLE teachers ADD COLUMN envPasswordMark TEXT")
+
     if TEACHER_PASSWORD:
-        cursor.execute("""
-        INSERT INTO teachers (id, name, email, password) VALUES ('t_annette', ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email, password = excluded.password
-        """, (TEACHER_NAME, TEACHER_USERNAME, hash_password(TEACHER_PASSWORD)))
+        teacher = cursor.execute("SELECT envPasswordMark FROM teachers WHERE id = 't_annette'").fetchone()
+        env_changed = not teacher or not verify_password(teacher["envPasswordMark"] or "", TEACHER_PASSWORD)[0]
+        if env_changed:
+            cursor.execute("""
+            INSERT INTO teachers (id, name, email, password, envPasswordMark) VALUES ('t_annette', ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email,
+                password = excluded.password, envPasswordMark = excluded.envPasswordMark
+            """, (TEACHER_NAME, TEACHER_USERNAME, hash_password(TEACHER_PASSWORD), hash_password(TEACHER_PASSWORD)))
+        else:
+            cursor.execute("UPDATE teachers SET name = ?, email = ? WHERE id = 't_annette'", (TEACHER_NAME, TEACHER_USERNAME))
     elif os.environ.get("RENDER") and not cursor.execute("SELECT 1 FROM teachers LIMIT 1").fetchone():
         # Never use a known default password on the live site.
         print("ERROR: TEACHER_PASSWORD is not set. Teacher sign-in is disabled until you set it in the Render dashboard.")
@@ -367,6 +381,10 @@ class RequestPayload(BaseModel):
     lessonSummary: Optional[str] = None
     requestType: str
     message: str
+
+class ChangePasswordPayload(BaseModel):
+    currentPassword: str
+    newPassword: str
 
 class ReplyPayload(BaseModel):
     reply: str
@@ -459,6 +477,28 @@ def logout(authorization: Optional[str] = Header(None)):
         conn.commit()
         conn.close()
     return {"status": "signed_out"}
+
+@app.post("/api/auth/change-password")
+def change_password(payload: ChangePasswordPayload, session: dict = Depends(get_session), authorization: Optional[str] = Header(None)):
+    table = "teachers" if session["role"] == "teacher" else "students"
+    min_length = 8 if table == "teachers" else 4
+    if len(payload.newPassword) < min_length:
+        raise HTTPException(status_code=400, detail=f"The new password must be at least {min_length} characters.")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    row = cursor.execute(f"SELECT password FROM {table} WHERE id = ?", (session["userId"],)).fetchone()
+    if not row or not verify_password(row["password"], payload.currentPassword)[0]:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Your current password is incorrect.")
+
+    cursor.execute(f"UPDATE {table} SET password = ? WHERE id = ?", (hash_password(payload.newPassword), session["userId"]))
+    # Sign out every other device that used the old password.
+    current_token = token_key(authorization[7:].strip())
+    cursor.execute("DELETE FROM sessions WHERE role = ? AND userId = ? AND token != ?", (session["role"], session["userId"], current_token))
+    conn.commit()
+    conn.close()
+    return {"status": "changed"}
 
 @app.get("/api/auth/me")
 def me(session: dict = Depends(get_session)):

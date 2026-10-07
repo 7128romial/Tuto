@@ -1401,7 +1401,7 @@
         </button>
         <button class="t-tab-btn" data-tab="backup" onclick="showTeacherTab('backup', this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10M18.4 4.6a10 10 0 1 1-12.8 0"/></svg>
-          Backup
+          Settings
         </button>
       </div>
 
@@ -1528,8 +1528,28 @@
         </div>
       </div>
 
-      <!-- Tab Content 5: Data Backup -->
+      <!-- Tab Content 5: Settings & Backup -->
       <div id="tTabBackup" style="display: none;">
+        <div class="content-panel" style="max-width: 600px; margin-bottom: 20px;">
+          <div class="panel-title" style="margin-bottom: 12px;">🔒 Change Password</div>
+          <form onsubmit="handleChangePassword(event)">
+            <input type="text" autocomplete="username" style="display: none;" aria-hidden="true">
+            <div class="form-group">
+              <label class="form-label" for="cpCurrent">Current password:</label>
+              <input type="password" id="cpCurrent" class="input-field" autocomplete="current-password" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cpNew">New password (at least 8 characters):</label>
+              <input type="password" id="cpNew" class="input-field" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cpConfirm">Type the new password again:</label>
+              <input type="password" id="cpConfirm" class="input-field" autocomplete="new-password" minlength="8" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Save New Password</button>
+          </form>
+        </div>
+
         <div class="content-panel" style="max-width: 600px;">
           <div class="panel-title" style="margin-bottom: 12px;">Data Management & Backup</div>
           <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 24px;">
@@ -3386,6 +3406,26 @@
 
     function closeModal(id) {
       document.getElementById(id).classList.remove('show');
+    }
+
+    async function handleChangePassword(e) {
+      e.preventDefault();
+      const current = document.getElementById('cpCurrent').value;
+      const next = document.getElementById('cpNew').value;
+      const confirmNext = document.getElementById('cpConfirm').value;
+
+      if (next.length < 8) { alert('The new password must be at least 8 characters.'); return; }
+      if (next !== confirmNext) { alert('The two new passwords do not match.'); return; }
+      if (next === current) { alert('The new password must be different from the current one.'); return; }
+
+      try {
+        await api('POST', '/auth/change-password', { currentPassword: current, newPassword: next });
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      e.target.reset();
+      triggerToast('Password changed. Other devices were signed out.');
     }
 
     function exportBackupFile() {

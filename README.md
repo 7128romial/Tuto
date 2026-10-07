@@ -20,6 +20,8 @@ The teacher login comes from environment variables:
 - `TEACHER_NAME` (default `Annette`)
 
 On Render, set `TEACHER_PASSWORD` under the service's Environment tab.
+Annette can then change her password in the app under Settings. That change survives restarts.
+If she forgets it, set a new `TEACHER_PASSWORD` value in Render. The new value replaces the password on the next start.
 On Render, teacher sign-in stays disabled until `TEACHER_PASSWORD` is set.
 When you run the server on your own computer without `TEACHER_PASSWORD`, the password is `annette123`.
 
