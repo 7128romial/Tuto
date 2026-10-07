@@ -17,12 +17,12 @@ import java.nio.file.Paths;
  *   java TutoringServer.java
  * 
  * Serves the interactive portal on:
- *   http://127.0.0.1:8080/
+ *   http://127.0.0.1:8085/
  */
 public class TutoringServer {
 
     private static final int PORT = 8085;
-    private static final String HTML_FILE = "english_tutoring_portal.html";
+    private static final String HTML_FILE = "index.html";
 
     // In-memory JSON stores seeded with default data
     private static String studentsJson = """
