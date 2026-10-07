@@ -140,11 +140,6 @@ class SignUpPayload(BaseModel):
     notes: Optional[str] = ""
     password: str
 
-class TeacherSignUpPayload(BaseModel):
-    name: str
-    email: str
-    password: str
-
 class LessonPayload(BaseModel):
     id: Optional[str] = None
     studentId: str
@@ -225,24 +220,6 @@ def login(payload: LoginPayload):
         if student["password"] and student["password"] != payload.password:
             raise HTTPException(status_code=401, detail="Incorrect password. Please verify your password.")
         return {"role": "student", "studentId": student["id"], "name": student["name"]}
-
-@app.post("/api/auth/teacher/signup")
-def signup_teacher(payload: TeacherSignUpPayload):
-    conn = get_db()
-    cursor = conn.cursor()
-    normalized_email = payload.email.strip().lower()
-    cursor.execute("SELECT * FROM teachers WHERE email = ? OR name = ?", (normalized_email, payload.name.strip()))
-    existing = cursor.fetchone()
-    if existing:
-        conn.close()
-        raise HTTPException(status_code=409, detail="A teacher account with that email or name already exists.")
-
-    teacher_id = f"t_{int(time.time())}"
-    cursor.execute("INSERT INTO teachers (id, name, email, password) VALUES (?, ?, ?, ?)",
-                   (teacher_id, payload.name.strip(), normalized_email, payload.password))
-    conn.commit()
-    conn.close()
-    return {"role": "teacher", "teacherId": teacher_id, "name": payload.name.strip()}
 
 @app.post("/api/auth/signup")
 def signup(payload: SignUpPayload):
