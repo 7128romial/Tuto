@@ -68,7 +68,7 @@ def init_db():
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         grade TEXT,
-        rate REAL DEFAULT 45.0,
+        rate REAL DEFAULT 220.0,
         phone TEXT,
         wa TEXT,
         notes TEXT,
@@ -96,7 +96,7 @@ def init_db():
         date TEXT NOT NULL,
         startTime TEXT NOT NULL,
         endTime TEXT NOT NULL,
-        rate REAL DEFAULT 45.0,
+        rate REAL DEFAULT 220.0,
         payment TEXT DEFAULT 'Unpaid',
         method TEXT DEFAULT 'Bit',
         status TEXT DEFAULT 'Confirmed',
@@ -225,16 +225,29 @@ def login(payload: LoginPayload):
 def signup(payload: SignUpPayload):
     conn = get_db()
     cursor = conn.cursor()
-    new_id = f"s_{int(time.time())}"
-    
     clean_digits = "".join([c for c in payload.phone if c.isdigit()])
     if clean_digits.startswith("0"):
         clean_digits = "972" + clean_digits[1:]
-        
+
+    existing = cursor.execute(
+        "SELECT * FROM students WHERE LOWER(name) = ? AND (phone = ? OR wa = ?)",
+        (payload.name.strip().lower(), payload.phone.strip(), clean_digits)
+    ).fetchone()
+
+    if existing:
+        cursor.execute(
+            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ? WHERE id = ?",
+            (payload.grade, payload.phone, clean_digits, payload.notes or '', payload.password, existing["id"])
+        )
+        conn.commit()
+        conn.close()
+        return {"role": "student", "studentId": existing["id"], "name": existing["name"]}
+
+    new_id = f"s_{int(time.time())}"
     cursor.execute("""
     INSERT INTO students (id, name, grade, rate, phone, wa, notes, password)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (new_id, payload.name, payload.grade, 45.0, payload.phone, clean_digits, payload.notes, payload.password))
+    """, (new_id, payload.name, payload.grade, 220.0, payload.phone, clean_digits, payload.notes, payload.password))
     conn.commit()
     conn.close()
     
