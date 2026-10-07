@@ -167,6 +167,12 @@ class RequestPayload(BaseModel):
 class ReplyPayload(BaseModel):
     reply: str
     newStatus: Optional[str] = "Answered"
+    lessonId: Optional[str] = None
+    newDay: Optional[str] = None
+    newDate: Optional[str] = None
+    newStartTime: Optional[str] = None
+    newEndTime: Optional[str] = None
+    updateLesson: bool = False
 
 @app.get("/")
 def serve_frontend():
@@ -339,6 +345,20 @@ def reply_request(request_id: str, payload: ReplyPayload):
     conn = get_db()
     cursor = conn.cursor()
     now_iso = datetime.utcnow().isoformat() + "Z"
+
+    if payload.updateLesson and payload.lessonId:
+        updated_day = payload.newDay or "Monday"
+        updated_date = payload.newDate or datetime.utcnow().strftime("%Y-%m-%d")
+        updated_start = payload.newStartTime or "09:00"
+        updated_end = payload.newEndTime or "10:00"
+        updated_week = datetime.strptime(updated_date, "%Y-%m-%d").strftime("%Y-W%W")
+
+        cursor.execute("""
+        UPDATE lessons
+        SET day = ?, date = ?, startTime = ?, endTime = ?, weekId = ?
+        WHERE id = ?
+        """, (updated_day, updated_date, updated_start, updated_end, updated_week, payload.lessonId))
+
     cursor.execute("""
     UPDATE requests SET teacherReply = ?, teacherReplyDate = ?, status = ? WHERE id = ?
     """, (payload.reply, now_iso, payload.newStatus, request_id))
