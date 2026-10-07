@@ -73,13 +73,19 @@ def init_db():
         wa TEXT,
         notes TEXT,
         password TEXT NOT NULL,
-        inviteCode TEXT
+        inviteCode TEXT,
+        parentName TEXT,
+        parentPhone TEXT
     )
     """)
 
     student_columns = [row[1] for row in cursor.execute("PRAGMA table_info(students)").fetchall()]
     if 'inviteCode' not in student_columns:
         cursor.execute("ALTER TABLE students ADD COLUMN inviteCode TEXT")
+    if 'parentName' not in student_columns:
+        cursor.execute("ALTER TABLE students ADD COLUMN parentName TEXT")
+    if 'parentPhone' not in student_columns:
+        cursor.execute("ALTER TABLE students ADD COLUMN parentPhone TEXT")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS teachers (
@@ -142,6 +148,8 @@ class SignUpPayload(BaseModel):
     name: str
     grade: str
     phone: str
+    parentName: Optional[str] = ""
+    parentPhone: Optional[str] = ""
     notes: Optional[str] = ""
     password: str
     inviteCode: Optional[str] = ""
@@ -237,19 +245,20 @@ def login(payload: LoginPayload):
 def signup(payload: SignUpPayload):
     conn = get_db()
     cursor = conn.cursor()
-    clean_digits = "".join([c for c in payload.phone if c.isdigit()])
+    parent_phone_value = (payload.parentPhone or payload.phone or "").strip()
+    clean_digits = "".join([c for c in parent_phone_value if c.isdigit()])
     if clean_digits.startswith("0"):
         clean_digits = "972" + clean_digits[1:]
 
     existing = cursor.execute(
         "SELECT * FROM students WHERE LOWER(name) = ? AND (phone = ? OR wa = ?)",
-        (payload.name.strip().lower(), payload.phone.strip(), clean_digits)
+        (payload.name.strip().lower(), parent_phone_value, clean_digits)
     ).fetchone()
 
     if existing:
         cursor.execute(
-            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ?, inviteCode = COALESCE(?, inviteCode) WHERE id = ?",
-            (payload.grade, payload.phone, clean_digits, payload.notes or '', payload.password, payload.inviteCode or existing["inviteCode"], existing["id"])
+            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ?, inviteCode = COALESCE(?, inviteCode), parentName = COALESCE(?, parentName), parentPhone = COALESCE(?, parentPhone) WHERE id = ?",
+            (payload.grade, parent_phone_value, clean_digits, payload.notes or '', payload.password, payload.inviteCode or existing["inviteCode"], payload.parentName or existing["parentName"], parent_phone_value or existing["parentPhone"], existing["id"])
         )
         conn.commit()
         conn.close()
@@ -257,9 +266,9 @@ def signup(payload: SignUpPayload):
 
     new_id = f"s_{int(time.time())}"
     cursor.execute("""
-    INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (new_id, payload.name, payload.grade, 220.0, payload.phone, clean_digits, payload.notes, payload.password, payload.inviteCode or ""))
+    INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (new_id, payload.name, payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, payload.password, payload.inviteCode or "", payload.parentName or "", parent_phone_value))
     conn.commit()
     conn.close()
     
@@ -269,7 +278,7 @@ def signup(payload: SignUpPayload):
 def list_students():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode FROM students ORDER BY name ASC")
+    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode, parentName, parentPhone FROM students ORDER BY name ASC")
     items = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return items

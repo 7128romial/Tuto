@@ -1197,9 +1197,15 @@
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">Parent / Contact Phone (with country code):</label>
-                <input type="text" id="regStudentPhone" class="input-field" placeholder="E.g., 054-123-4567" required>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Parent Name:</label>
+                  <input type="text" id="regParentName" class="input-field" placeholder="E.g., Dana Levi" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Parent Phone (with country code):</label>
+                  <input type="text" id="regParentPhone" class="input-field" placeholder="E.g., +972 54-123-4567" required>
+                </div>
               </div>
 
               <div class="form-group">
@@ -1663,9 +1669,15 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Parent Name & Phone (with country code):</label>
-            <input type="text" id="modalStudentPhone" class="input-field" placeholder="E.g., 054-123-4567">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Parent Name:</label>
+              <input type="text" id="modalStudentParentName" class="input-field" placeholder="E.g., Dana Levi">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Parent Phone (with country code):</label>
+              <input type="text" id="modalStudentPhone" class="input-field" placeholder="E.g., +972 54-123-4567">
+            </div>
           </div>
 
           <div class="form-group">
@@ -1952,12 +1964,14 @@
       const name = document.getElementById('regStudentName').value.trim();
       const grade = document.getElementById('regStudentGrade').value.trim();
       const pass = document.getElementById('regStudentPassword').value.trim();
-      const phone = document.getElementById('regStudentPhone').value.trim();
+      const parentName = document.getElementById('regParentName').value.trim();
+      const parentPhone = document.getElementById('regParentPhone').value.trim();
       const notes = document.getElementById('regStudentNotes').value.trim();
       const inviteCode = new URLSearchParams(window.location.search).get('invite');
+      const phone = parentPhone || '';
 
-      if (!name || !phone || !pass) {
-        alert('Please complete the student name, phone number, and password.');
+      if (!name || !parentName || !parentPhone || !pass) {
+        alert('Please complete the student name, parent name, parent phone number, and password.');
         return;
       }
 
@@ -1976,8 +1990,10 @@
         matchedStudent.password = pass;
         matchedStudent.grade = grade || matchedStudent.grade || 'Student';
         matchedStudent.notes = notes || matchedStudent.notes || '';
+        matchedStudent.parentName = parentName || matchedStudent.parentName || '';
+        matchedStudent.parentPhone = parentPhone || matchedStudent.parentPhone || matchedStudent.phone || '';
         matchedStudent.wa = cleanDigits;
-        matchedStudent.phone = phone;
+        matchedStudent.phone = parentPhone;
         matchedStudent.rate = Number(matchedStudent.rate) || 220;
         if (inviteCode) matchedStudent.inviteCode = inviteCode;
         students = students.map(s => s.id === matchedStudent.id ? matchedStudent : s);
@@ -1993,7 +2009,7 @@
           const res = await fetch(`${API_BASE}/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, grade, phone, notes, password: pass })
+            body: JSON.stringify({ name, grade, phone, parentName, parentPhone, notes, password: pass, inviteCode })
           });
           if (!res.ok) throw new Error('Registration failed');
           session = await res.json();
@@ -2005,7 +2021,7 @@
       } else {
         const newStudent = {
           id: 's_' + Date.now(),
-          name, grade: grade || 'Student', rate: 220, phone, wa: cleanDigits, notes, password: pass
+          name, grade: grade || 'Student', rate: 220, phone: parentPhone, parentName, parentPhone, wa: cleanDigits, notes, password: pass, inviteCode: inviteCode || undefined
         };
         students.push(newStudent);
         session = { role: 'student', studentId: newStudent.id, name: newStudent.name };
@@ -2908,7 +2924,8 @@
 
       switchAuthTab('studentRegister');
       document.getElementById('regStudentName').value = student.name || '';
-      document.getElementById('regStudentPhone').value = student.phone || '';
+      document.getElementById('regParentName').value = student.parentName || '';
+      document.getElementById('regParentPhone').value = student.parentPhone || student.phone || '';
       document.getElementById('regStudentGrade').value = student.grade || '';
       document.getElementById('regStudentNotes').value = student.notes || '';
       document.getElementById('regStudentName').focus();
@@ -3201,6 +3218,7 @@
       document.getElementById('modalStudentName').value = '';
       document.getElementById('modalStudentGrade').value = '';
       document.getElementById('modalStudentRate').value = '220';
+      document.getElementById('modalStudentParentName').value = '';
       document.getElementById('modalStudentPhone').value = '';
       document.getElementById('modalStudentNotes').value = '';
       openModal('studentModal');
@@ -3215,7 +3233,8 @@
       document.getElementById('modalStudentName').value = s.name;
       document.getElementById('modalStudentGrade').value = s.grade;
       document.getElementById('modalStudentRate').value = s.rate;
-      document.getElementById('modalStudentPhone').value = s.phone;
+      document.getElementById('modalStudentParentName').value = s.parentName || '';
+      document.getElementById('modalStudentPhone').value = s.parentPhone || s.phone || '';
       document.getElementById('modalStudentNotes').value = s.notes;
       openModal('studentModal');
     }
@@ -3223,6 +3242,7 @@
     async function handleStudentSave(e) {
       e.preventDefault();
       const editId = document.getElementById('modalStudentId').value;
+      const parentName = document.getElementById('modalStudentParentName').value.trim();
       const phoneRaw = document.getElementById('modalStudentPhone').value.trim();
       let cleanDigits = phoneRaw.replace(/\D/g, '');
       if (cleanDigits.startsWith('0')) cleanDigits = '972' + cleanDigits.substring(1);
@@ -3232,6 +3252,8 @@
         name: document.getElementById('modalStudentName').value.trim(),
         grade: document.getElementById('modalStudentGrade').value.trim(),
         rate: Number(document.getElementById('modalStudentRate').value) || 220,
+        parentName,
+        parentPhone: phoneRaw,
         phone: phoneRaw,
         wa: cleanDigits,
         notes: document.getElementById('modalStudentNotes').value.trim(),
