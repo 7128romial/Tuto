@@ -1,0 +1,3047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helen's English Studio — Interactive Schedule & Student Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --primary-border: #c7d2fe;
+      
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+
+      --emerald-50: #ecfdf5;
+      --emerald-100: #d1fae5;
+      --emerald-500: #10b981;
+      --emerald-600: #059669;
+      --emerald-700: #047857;
+
+      --amber-50: #fffbeb;
+      --amber-100: #fef3c7;
+      --amber-500: #f59e0b;
+      --amber-600: #d97706;
+      --amber-700: #b45309;
+
+      --rose-50: #fff1f2;
+      --rose-100: #ffe4e6;
+      --rose-500: #f43f5e;
+      --rose-600: #e11d48;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      
+      --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+      --shadow-hover: 0 12px 24px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+      --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: var(--slate-800);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.78rem;
+      color: var(--slate-500);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .backend-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: #f1f5f9;
+      color: var(--slate-600);
+      border: 1px solid var(--slate-200);
+    }
+
+    .backend-pill.online {
+      background: var(--emerald-50);
+      color: var(--emerald-700);
+      border-color: #a7f3d0;
+    }
+
+    /* Auth status & actions */
+    .nav-user-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-pill {
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--slate-800);
+    }
+
+    .role-badge-count {
+      background: var(--amber-500);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 9999px;
+    }
+
+    /* Sub-Header: Week Controls */
+    .subnav {
+      background: white;
+      border-bottom: 1px solid var(--slate-200);
+      padding: 12px 24px;
+    }
+
+    .subnav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .week-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .week-label-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin: 0 4px;
+    }
+
+    .week-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      letter-spacing: -0.01em;
+    }
+
+    .week-sublabel {
+      font-size: 0.75rem;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    .btn-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--slate-200);
+      background: white;
+      color: var(--slate-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-circle:hover {
+      background: var(--slate-100);
+      border-color: var(--slate-300);
+      color: var(--slate-900);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: white;
+      border-color: var(--slate-200);
+      color: var(--slate-700);
+    }
+
+    .btn-secondary:hover {
+      background: var(--slate-50);
+      border-color: var(--slate-300);
+      color: var(--slate-900);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 24px auto;
+      padding: 0 24px;
+      flex-grow: 1;
+    }
+
+    /* Badges */
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-paid {
+      background: var(--emerald-50);
+      color: var(--emerald-700);
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-unpaid {
+      background: var(--amber-50);
+      color: var(--amber-700);
+      border: 1px solid #fde68a;
+    }
+
+    .badge-cancelled {
+      background: var(--rose-50);
+      color: var(--rose-600);
+      border: 1px solid #fecdd3;
+    }
+
+    .badge-confirmed {
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+
+    /* ==============================================
+       AUTHENTICATION GATEWAY
+       ============================================== */
+    .auth-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      min-height: calc(100vh - 160px);
+    }
+
+    .auth-card {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      max-width: 480px;
+      width: 100%;
+      overflow: hidden;
+      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .auth-header {
+      background: linear-gradient(135deg, #1e1b4b, #312e81, #4338ca);
+      color: white;
+      padding: 32px 28px;
+      text-align: center;
+    }
+
+    .auth-header h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .auth-header p {
+      color: #c7d2fe;
+      font-size: 0.88rem;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: var(--slate-100);
+      border-bottom: 1px solid var(--slate-200);
+      padding: 4px;
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--slate-600);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+    }
+
+    .auth-tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .auth-body {
+      padding: 28px;
+    }
+
+    .demo-accounts-box {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--slate-200);
+      font-size: 0.8rem;
+      color: var(--slate-500);
+    }
+
+    .demo-chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .demo-chip {
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .demo-chip:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    /* ==============================================
+       STUDENT PORTAL (PRIVATE VIEW)
+       ============================================== */
+    .student-welcome-header {
+      background: linear-gradient(135deg, #1e1b4b, #312e81, #4338ca);
+      color: white;
+      border-radius: var(--radius-xl);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px -5px rgba(49, 46, 129, 0.25);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .student-welcome-text h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .student-welcome-text p {
+      color: #c7d2fe;
+      font-size: 0.92rem;
+      max-width: 620px;
+    }
+
+    .privacy-notice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 24px;
+    }
+
+    .next-appointment-hero {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      border-top: 4px solid var(--primary);
+    }
+
+    .appointment-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--slate-100);
+    }
+
+    .meta-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .meta-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--slate-400);
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .meta-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .student-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 900px) {
+      .student-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .content-panel {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .private-lesson-card {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+
+    .private-lesson-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .private-lesson-card.cancelled {
+      border-left-color: var(--rose-500);
+      background: var(--rose-50);
+      opacity: 0.8;
+    }
+
+    .private-lesson-card.completed {
+      border-left-color: var(--emerald-500);
+    }
+
+    /* Form Controls */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--slate-700);
+      margin-bottom: 6px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      color: var(--slate-900);
+      background: white;
+      outline: none;
+      transition: all 0.15s;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+
+    textarea.input-field {
+      min-height: 85px;
+      resize: vertical;
+    }
+
+    .req-item-card {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 16px;
+      background: white;
+      transition: all 0.2s;
+    }
+
+    .req-item-card.pending {
+      border-left: 4px solid var(--amber-500);
+      background: #fffdfa;
+    }
+
+    .req-item-card.resolved {
+      border-left: 4px solid var(--emerald-500);
+    }
+
+    .chat-bubble-student {
+      background: #f1f5f9;
+      border-radius: 12px 12px 12px 2px;
+      padding: 12px 16px;
+      margin: 10px 0;
+      font-size: 0.9rem;
+      color: var(--slate-800);
+    }
+
+    .chat-bubble-teacher {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 12px 12px 2px 12px;
+      padding: 12px 16px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #312e81;
+    }
+
+    .teacher-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    /* ==============================================
+       TEACHER DASHBOARD
+       ============================================== */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .metric-card.accent-primary::before { background: var(--primary); }
+    .metric-card.accent-amber::before { background: var(--amber-500); }
+    .metric-card.accent-emerald::before { background: var(--emerald-500); }
+    .metric-card.accent-rose::before { background: var(--rose-500); }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--slate-500);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin: 8px 0 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .metric-footer {
+      font-size: 0.8rem;
+      color: var(--slate-500);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Progress bar for payments */
+    .progress-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: var(--slate-100);
+      border-radius: 9999px;
+      margin: 8px 0 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      border-radius: 9999px;
+      transition: width 0.4s ease;
+    }
+
+    /* Search & Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 220px;
+      padding: 8px 14px;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+    }
+
+    .teacher-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--slate-200);
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .t-tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 12px 18px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--slate-500);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .t-tab-btn:hover {
+      color: var(--slate-900);
+    }
+
+    .t-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .schedule-board {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(170px, 1fr));
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+
+    @media (max-width: 1100px) {
+      .schedule-board {
+        grid-template-columns: repeat(7, minmax(200px, 1fr));
+      }
+    }
+
+    .day-column {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-subtle);
+      overflow: hidden;
+      min-height: 480px;
+    }
+
+    .day-header {
+      padding: 14px 16px;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .day-header.today {
+      background: var(--primary-light);
+      border-bottom-color: var(--primary-border);
+    }
+
+    .day-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--slate-900);
+    }
+
+    .day-date-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--slate-500);
+    }
+
+    .day-content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-grow: 1;
+    }
+
+    .empty-state-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 10px;
+      text-align: center;
+      color: var(--slate-400);
+      font-size: 0.8rem;
+      border: 1px dashed var(--slate-200);
+      border-radius: var(--radius-sm);
+      margin: auto 0;
+    }
+
+    .teacher-lesson-card {
+      background: white;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      border-left: 4px solid var(--primary);
+    }
+
+    .teacher-lesson-card.status-cancelled {
+      border-left-color: var(--rose-500);
+      background: #fff5f5;
+      opacity: 0.75;
+    }
+
+    .teacher-lesson-card.status-completed {
+      border-left-color: var(--emerald-500);
+    }
+
+    .teacher-lesson-card.has-pending-req {
+      border-left-color: var(--amber-500);
+      background: var(--amber-50);
+    }
+
+    .lesson-time-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .lesson-time {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .student-badge-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 4px;
+    }
+
+    .lesson-topic {
+      font-size: 0.78rem;
+      color: var(--slate-600);
+      margin-bottom: 8px;
+    }
+
+    .lesson-actions-bar {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--slate-100);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .action-icon-btn {
+      background: transparent;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      color: var(--slate-600);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .action-icon-btn:hover {
+      background: var(--slate-100);
+      color: var(--slate-900);
+    }
+
+    /* Tables */
+    .table-container {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th {
+      padding: 14px 18px;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--slate-200);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--slate-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--slate-100);
+      color: var(--slate-700);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .wa-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #25d366;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .quick-chip {
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-radius: 9999px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: var(--slate-700);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .quick-chip:hover {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: var(--radius-lg);
+      max-width: 520px;
+      width: 100%;
+      box-shadow: var(--shadow-modal);
+      overflow: hidden;
+      animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-top {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--slate-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-top h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--slate-400);
+      cursor: pointer;
+    }
+
+    .modal-body-content {
+      padding: 24px;
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    .modal-bottom {
+      padding: 16px 24px;
+      border-top: 1px solid var(--slate-200);
+      background: #fafbfc;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* Toast */
+    .toast-pill {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--slate-900);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 9999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 150;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast-pill.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="brand-logo">E</div>
+        <div>
+          <div class="brand-title">Helen's English Studio</div>
+          <div class="brand-subtitle" id="navSubtitle">
+            <span>Student & Teacher Portal</span>
+            <span class="backend-pill" id="backendStatusPill">⚡ Local Mode</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Session Area -->
+      <div class="nav-user-area" id="navUserArea">
+        <div class="user-pill" id="userPillDisplay" style="display: none;">
+          <span id="userPillIcon">👤</span>
+          <span id="userPillName">Maya Ronen</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="signOutBtn" style="display: none;" onclick="handleSignOut()">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Week Control Sub-Header (Only visible when logged in) -->
+  <div class="subnav" id="subnavBar" style="display: none;">
+    <div class="subnav-inner">
+      <div class="week-nav">
+        <button class="btn-circle" onclick="shiftWeek(-1)" title="Previous Week">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div class="week-label-box">
+          <span class="week-label" id="currentWeekRange">Oct 4 – Oct 10, 2026</span>
+          <span class="week-sublabel" id="weekDescriptor">Current Active Week</span>
+        </div>
+        <button class="btn-circle" onclick="shiftWeek(1)" title="Next Week">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="resetToThisWeek()">This Week</button>
+      </div>
+
+      <!-- Action buttons visible in teacher view -->
+      <div id="teacherActionButtons" style="display: none; gap: 10px;">
+        <button class="btn btn-secondary btn-sm" onclick="duplicateCurrentWeek()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          Duplicate Week to Next
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openLessonModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+          Add New Lesson
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main View Area -->
+  <main class="main-container">
+
+    <!-- ==============================================
+         0. AUTHENTICATION SCREEN (LOGIN & REGISTER)
+         ============================================== -->
+    <div id="authScreen" class="auth-overlay">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2>Welcome to English Studio</h2>
+          <p>Sign in to view your lesson timetable or register as a new student</p>
+        </div>
+
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="tabBtnTeacherLogin" onclick="switchAuthTab('teacherLogin')">
+            👩‍🏫 Teacher Sign In
+          </button>
+          <button class="auth-tab-btn" id="tabBtnStudentLogin" onclick="switchAuthTab('studentLogin')">
+            🎓 Student Sign In
+          </button>
+          <button class="auth-tab-btn" id="tabBtnStudentRegister" onclick="switchAuthTab('studentRegister')">
+            ✨ Student Sign Up
+          </button>
+        </div>
+
+        <div class="auth-body">
+          
+          <!-- TAB A: Teacher Sign In -->
+          <div id="paneTeacherLogin">
+            <form onsubmit="handleTeacherSignIn(event)">
+              <div class="form-group">
+                <label class="form-label">Teacher Username / Email:</label>
+                <input type="text" id="teacherEmailInput" class="input-field" value="helen@studio.com" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password / PIN:</label>
+                <input type="password" id="teacherPassInput" class="input-field" value="helen123" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                Sign In as Mom (Teacher Helen)
+              </button>
+            </form>
+          </div>
+
+          <!-- TAB B: Student Sign In -->
+          <div id="paneStudentLogin" style="display: none;">
+            <form onsubmit="handleStudentSignIn(event)">
+              <div class="form-group">
+                <label class="form-label">Select Your Student Profile:</label>
+                <select id="loginStudentSelect" class="input-field" required>
+                  <!-- Populated from students -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password:</label>
+                <input type="password" id="studentPassInput" class="input-field" value="student123" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                Sign In to My Student Portal
+              </button>
+            </form>
+          </div>
+
+          <!-- TAB C: Student Sign Up (Register New Student) -->
+          <div id="paneStudentRegister" style="display: none;">
+            <form onsubmit="handleStudentSignUp(event)">
+              <div class="form-group">
+                <label class="form-label">Student Full Name:</label>
+                <input type="text" id="regStudentName" class="input-field" placeholder="E.g., Liam Chen" required>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Grade / Level:</label>
+                  <input type="text" id="regStudentGrade" class="input-field" placeholder="E.g., 9th Grade / 4 Units" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Create Password:</label>
+                  <input type="password" id="regStudentPassword" class="input-field" placeholder="Min. 4 characters" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Parent Name & Phone (with country code):</label>
+                <input type="text" id="regStudentPhone" class="input-field" placeholder="E.g., Michal (Mom) 054-123-4567" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Learning Goals / Notes for Helen:</label>
+                <textarea id="regStudentNotes" class="input-field" placeholder="E.g., Preparing for high school exams, grammar drills..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                Create Student Account & Sign In
+              </button>
+            </form>
+          </div>
+
+          <!-- Demo Helper Chips -->
+          <div class="demo-accounts-box">
+            <span>⚡ Quick One-Click Demo Access:</span>
+            <div class="demo-chip-group">
+              <span class="demo-chip" onclick="quickLoginDemo('teacher')">👩‍🏫 Teacher Helen</span>
+              <span class="demo-chip" onclick="quickLoginDemo('s1')">🎓 Maya Ronen (Student)</span>
+              <span class="demo-chip" onclick="quickLoginDemo('s2')">🎓 Daniel Klein (Student)</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================
+         1. STUDENT / PARENT VIEW (STRICTLY PRIVATE)
+         ============================================== -->
+    <div id="studentViewWrap" style="display: none;">
+      
+      <!-- Student Top Header Banner -->
+      <div class="student-welcome-header">
+        <div class="student-welcome-text">
+          <h2 id="studentGreetingTitle">Hello, Maya! 👋</h2>
+          <p>Here is your private lesson timetable with Teacher Helen. You only see your own appointments. To reschedule or cancel, submit your note below.</p>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.15); padding: 10px 18px; border-radius: var(--radius-md); font-weight: 700; color: white;">
+          🎓 Student Portal
+        </div>
+      </div>
+
+      <!-- Privacy Notice -->
+      <div class="privacy-notice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <strong>Private & Confidential:</strong> You are viewing only your own appointments and private correspondence with Teacher Helen. Other students cannot see your schedule.
+      </div>
+
+      <!-- Next Scheduled Appointment Card -->
+      <div id="studentNextAppointmentHero"></div>
+
+      <!-- Two Column Layout: My Appointments & Request Note -->
+      <div class="student-grid">
+        
+        <!-- Left: My Sessions for Selected Week -->
+        <div class="content-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              My Scheduled Lessons This Week
+            </div>
+          </div>
+          <div id="myAppointmentsList">
+            <!-- Strictly populated with this student's lessons only -->
+          </div>
+        </div>
+
+        <!-- Right: Change / Cancel Request Form -->
+        <div class="content-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Request Change or Cancellation
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 16px;">
+            Need a different hour or have an exam? Choose your session, write your requested time or reason, and Teacher Helen will reply to you directly.
+          </p>
+
+          <form onsubmit="handleStudentRequestSubmit(event)">
+            <div class="form-group">
+              <label class="form-label">Select Your Lesson:</label>
+              <select id="reqTargetLessonSelect" class="input-field" required>
+                <!-- Populated strictly with this student's lessons -->
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Request Type:</label>
+              <select id="reqTypeSelect" class="input-field">
+                <option value="Reschedule">🔄 Reschedule / Different Hour</option>
+                <option value="Cancel">❌ Cancel This Week's Lesson</option>
+                <option value="Question">💬 Question About My Lesson</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Your Note / Preferred Alternative Time:</label>
+              <textarea id="reqNoteText" class="input-field" placeholder="E.g., Hi Helen, can we move Wednesday 16:30 to Thursday at 18:00? I have a test on Wednesday..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              Send Note to Teacher Helen
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Messages & Teacher's Answers History -->
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
+            My Notes & Teacher Helen's Answers
+          </div>
+        </div>
+        <div id="studentRequestFeed">
+          <!-- Strictly this student's private communication -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==============================================
+         2. TEACHER / MOM DASHBOARD (FULL STUDIO ACCESS)
+         ============================================== -->
+    <div id="teacherViewWrap" style="display: none;">
+      
+      <!-- Metrics Row -->
+      <div class="metrics-row">
+        <div class="metric-card accent-primary">
+          <div class="metric-header">
+            <span>Weekly Sessions</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
+          </div>
+          <div class="metric-value" id="mTotalLessons">0</div>
+          <div class="metric-footer" id="mCompletedSubtitle">0 sessions completed</div>
+        </div>
+
+        <div class="metric-card accent-amber">
+          <div class="metric-header">
+            <span>Student Requests</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="metric-value" id="mPendingReqs" style="color: var(--amber-600);">0</div>
+          <div class="metric-footer">Waiting for your answer</div>
+        </div>
+
+        <div class="metric-card accent-emerald">
+          <div class="metric-header">
+            <span>Weekly Earnings</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="metric-value" id="mTotalRevenue">$0</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="mProgressFill" style="width: 0%;"></div>
+          </div>
+          <div class="metric-footer" id="mPaidSubtitle">$0 collected (0%)</div>
+        </div>
+
+        <div class="metric-card accent-rose">
+          <div class="metric-header">
+            <span>Pending Balance</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="metric-value" id="mUnpaidBalance" style="color: var(--rose-600);">$0</div>
+          <div class="metric-footer" id="mUnpaidSessions">0 unpaid lessons</div>
+        </div>
+      </div>
+
+      <!-- Teacher Navigation Tabs -->
+      <div class="teacher-nav">
+        <button class="t-tab-btn active" onclick="showTeacherTab('schedule', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          Master Timetable
+        </button>
+        <button class="t-tab-btn" onclick="showTeacherTab('requests', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Student Requests Inbox
+          <span class="role-badge-count" id="pendingBadgeTab" style="display: none;">0</span>
+        </button>
+        <button class="t-tab-btn" onclick="showTeacherTab('payments', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          Payment Tracker
+        </button>
+        <button class="t-tab-btn" onclick="showTeacherTab('roster', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Student Roster
+        </button>
+        <button class="t-tab-btn" onclick="showTeacherTab('backup', this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10M18.4 4.6a10 10 0 1 1-12.8 0"/></svg>
+          Data & Settings
+        </button>
+      </div>
+
+      <!-- Tab Content 1: Schedule -->
+      <div id="tTabSchedule">
+        <div class="content-panel" style="padding: 16px;">
+          
+          <!-- Live Interactive Search & Filter Bar -->
+          <div class="filter-bar">
+            <input type="text" id="scheduleSearchInput" class="search-input" placeholder="🔍 Search student name or topic..." oninput="handleScheduleFilterChange()">
+            <select id="scheduleDayFilter" class="input-field" style="width: auto; padding: 8px 12px;" onchange="handleScheduleFilterChange()">
+              <option value="all">All Days</option>
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+            </select>
+            <select id="scheduleLocFilter" class="input-field" style="width: auto; padding: 8px 12px;" onchange="handleScheduleFilterChange()">
+              <option value="all">All Locations</option>
+              <option value="Studio">In-Person Studio</option>
+              <option value="Zoom">Zoom / Online</option>
+            </select>
+          </div>
+
+          <div class="schedule-board" id="teacherScheduleBoard">
+            <!-- Dynamically populated with all students for Mom -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Student Requests -->
+      <div id="tTabRequests" style="display: none;">
+        <div class="content-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Inquiries & Reschedule Requests</div>
+              <p style="font-size: 0.8rem; color: var(--slate-500); margin-top: 2px;">
+                Answer student requests, approve new times, or cancel slots with a click.
+              </p>
+            </div>
+          </div>
+          <div id="teacherRequestsFeed">
+            <!-- Populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Payments Tracker -->
+      <div id="tTabPayments" style="display: none;">
+        <div class="content-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Lesson Ledger & Payment Status</div>
+              <p style="font-size: 0.8rem; color: var(--slate-500); margin-top: 2px;">
+                Track paid vs. pending fees, payment methods (Bit, Cash, PayBox, Transfer), and send reminders.
+              </p>
+            </div>
+            <div>
+              <select id="paymentFilterSelect" class="input-field" style="width: auto; padding: 6px 12px;" onchange="renderPaymentLedger()">
+                <option value="all">All Lessons This Week</option>
+                <option value="unpaid">Unpaid / Pending Only</option>
+                <option value="paid">Paid Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Session Date & Time</th>
+                  <th>Rate</th>
+                  <th>Status</th>
+                  <th>Payment Status</th>
+                  <th>Payment Method</th>
+                  <th>Quick Action</th>
+                </tr>
+              </thead>
+              <tbody id="paymentLedgerTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Student Roster -->
+      <div id="tTabRoster" style="display: none;">
+        <div class="content-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Registered Students</div>
+              <p style="font-size: 0.8rem; color: var(--slate-500); margin-top: 2px;">
+                Manage student profiles, parent contacts, WhatsApp quick links, and hourly pricing.
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openStudentModal()">
+              + Add Student
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Level / Grade</th>
+                  <th>Parent Contact</th>
+                  <th>Default Hourly Rate</th>
+                  <th>Learning Focus</th>
+                  <th>Contact Parent</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentRosterTbody">
+                <!-- Populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 5: Data Backup -->
+      <div id="tTabBackup" style="display: none;">
+        <div class="content-panel" style="max-width: 600px;">
+          <div class="panel-title" style="margin-bottom: 12px;">Data Management & Python Backend</div>
+          <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 24px;">
+            Run <code>python3 server.py</code> to launch the full-stack FastAPI server with local SQLite persistence on <code>http://127.0.0.1:8000</code>.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="padding: 16px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: #fafbfc;">
+              <h4 style="font-size: 0.95rem; margin-bottom: 4px;">📥 Export Studio Backup</h4>
+              <p style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 12px;">Save all your students, schedules, messages, and payments as a JSON file.</p>
+              <button class="btn btn-secondary btn-sm" onclick="exportBackupFile()">Download Backup (.json)</button>
+            </div>
+
+            <div style="padding: 16px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: #fafbfc;">
+              <h4 style="font-size: 0.95rem; margin-bottom: 4px;">📤 Restore from Backup</h4>
+              <p style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 12px;">Load a previously saved backup file.</p>
+              <input type="file" id="importInput" accept=".json" style="display: none;" onchange="importBackupFile(event)">
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('importInput').click()">Select Backup File</button>
+            </div>
+
+            <div style="padding: 16px; border: 1px solid #fee2e2; border-radius: var(--radius-sm); background: #fff5f5;">
+              <h4 style="font-size: 0.95rem; color: var(--rose-600); margin-bottom: 4px;">⚠️ Reset Sample Data</h4>
+              <p style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 12px;">Reset back to the clean demo roster and schedule.</p>
+              <button class="btn btn-sm" style="background: var(--rose-600); color: white;" onclick="resetToSampleData()">Reset Everything</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==============================================
+       MODALS
+       ============================================== -->
+
+  <!-- Add/Edit Lesson Modal -->
+  <div class="modal-backdrop" id="lessonModal">
+    <div class="modal-box">
+      <div class="modal-top">
+        <h3 id="lessonModalHeader">Add Private Session</h3>
+        <button class="close-modal-btn" onclick="closeModal('lessonModal')">&times;</button>
+      </div>
+      <form onsubmit="handleLessonSave(event)">
+        <div class="modal-body-content">
+          <input type="hidden" id="modalLessonId">
+
+          <div class="form-group">
+            <label class="form-label">Student:</label>
+            <select id="modalLessonStudent" class="input-field" required onchange="handleModalStudentChange()">
+              <!-- Injected -->
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Day of Week:</label>
+              <select id="modalLessonDay" class="input-field" required>
+                <option value="Sunday">Sunday</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date:</label>
+              <input type="date" id="modalLessonDate" class="input-field" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Start Time:</label>
+              <input type="time" id="modalLessonStart" class="input-field" required value="16:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Time:</label>
+              <input type="time" id="modalLessonEnd" class="input-field" required value="17:00">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Rate / Fee ($ or ₪):</label>
+              <input type="number" id="modalLessonRate" class="input-field" required value="45" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Payment Status:</label>
+              <select id="modalLessonPayment" class="input-field">
+                <option value="Unpaid">Unpaid / Pending</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lesson Focus / Topic:</label>
+            <input type="text" id="modalLessonTopic" class="input-field" placeholder="E.g., Essay Writing & Past Perfect">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Location / Mode:</label>
+              <select id="modalLessonLocation" class="input-field">
+                <option value="Studio (In-Person)">Studio (In-Person)</option>
+                <option value="Online (Zoom / Meet)">Online (Zoom / Google Meet)</option>
+                <option value="Student's Home">Student's Home</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Session Status:</label>
+              <select id="modalLessonStatus" class="input-field">
+                <option value="Confirmed">Confirmed</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-bottom">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('lessonModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Session</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add/Edit Student Modal -->
+  <div class="modal-backdrop" id="studentModal">
+    <div class="modal-box">
+      <div class="modal-top">
+        <h3 id="studentModalHeader">Add Student</h3>
+        <button class="close-modal-btn" onclick="closeModal('studentModal')">&times;</button>
+      </div>
+      <form onsubmit="handleStudentSave(event)">
+        <div class="modal-body-content">
+          <input type="hidden" id="modalStudentId">
+
+          <div class="form-group">
+            <label class="form-label">Student Name:</label>
+            <input type="text" id="modalStudentName" class="input-field" required placeholder="E.g., Daniel Klein">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Grade / Level:</label>
+              <input type="text" id="modalStudentGrade" class="input-field" placeholder="E.g., 10th Grade / 5-Units">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Standard Hourly Rate:</label>
+              <input type="number" id="modalStudentRate" class="input-field" value="45" min="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Parent Name & Phone (with country code):</label>
+            <input type="text" id="modalStudentPhone" class="input-field" placeholder="E.g., Sarah 054-234-5678">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Learning Goals / Notes:</label>
+            <textarea id="modalStudentNotes" class="input-field" placeholder="Targeting Module E Bagrut exam, vocabulary expansion, etc."></textarea>
+          </div>
+        </div>
+        <div class="modal-bottom">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('studentModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Interactive WhatsApp Composer Modal -->
+  <div class="modal-backdrop" id="waModal">
+    <div class="modal-box">
+      <div class="modal-top">
+        <h3>💬 WhatsApp Message Preview</h3>
+        <button class="close-modal-btn" onclick="closeModal('waModal')">&times;</button>
+      </div>
+      <div class="modal-body-content">
+        <p style="font-size:0.85rem; color:var(--slate-500); margin-bottom:14px;">
+          Choose a message template or edit the text before sending to the parent:
+        </p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <span class="quick-chip" onclick="setWaTemplate('reminder')">📅 Lesson Reminder</span>
+          <span class="quick-chip" onclick="setWaTemplate('payment')">💳 Payment Request</span>
+          <span class="quick-chip" onclick="setWaTemplate('confirm')">✓ Schedule Confirmed</span>
+        </div>
+        <div class="form-group">
+          <textarea id="waComposerText" class="input-field" style="min-height:110px;"></textarea>
+        </div>
+      </div>
+      <div class="modal-bottom">
+        <button type="button" class="btn btn-secondary" onclick="copyWaText()">Copy Text</button>
+        <a id="waSendAnchor" href="#" target="_blank" class="btn btn-primary" style="background:#25d366; border-color:#25d366;">
+          Open in WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Pill -->
+  <div class="toast-pill" id="toastBox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMsg">Operation successful</span>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    /* ==========================================================
+       DATA REPOSITORY & API BRIDGE
+       ========================================================== */
+    const SAMPLE_STUDENTS = [
+      { id: 's1', name: 'Maya Ronen', grade: '9th Grade', rate: 45, phone: 'Sarah (Mom) 054-234-5678', wa: '972542345678', notes: 'Grammar tenses and building speaking confidence.', password: 'student123' },
+      { id: 's2', name: 'Daniel Klein', grade: '11th Grade (5 Units)', rate: 50, phone: 'David (Dad) 050-987-6543', wa: '972509876543', notes: 'Bagrut Module E practice and unseen texts.', password: 'student123' },
+      { id: 's3', name: 'Liam Shahar', grade: '7th Grade', rate: 40, phone: 'Rachel 052-333-8899', wa: '972523338899', notes: 'Reading comprehension and school homework.', password: 'student123' },
+      { id: 's4', name: 'Emma Tal', grade: '10th Grade', rate: 45, phone: 'Noa 053-444-1122', wa: '972534441122', notes: 'Essay writing structure and rich vocabulary.', password: 'student123' },
+      { id: 's5', name: 'Noah Ben-David', grade: '8th Grade', rate: 40, phone: 'Itai 050-555-7788', wa: '972505557788', notes: 'Irregular verbs drill and conversational fluency.', password: 'student123' }
+    ];
+
+    const SAMPLE_LESSONS = [
+      { id: 'l1', studentId: 's1', studentName: 'Maya Ronen', weekId: '2026-W41', day: 'Sunday', date: '2026-10-04', startTime: '16:00', endTime: '17:00', rate: 45, payment: 'Paid', method: 'Bit', status: 'Completed', topic: 'Present Perfect & Vocabulary', location: 'Studio (In-Person)' },
+      { id: 'l2', studentId: 's3', studentName: 'Liam Shahar', weekId: '2026-W41', day: 'Sunday', date: '2026-10-04', startTime: '17:15', endTime: '18:15', rate: 40, payment: 'Paid', method: 'Cash', status: 'Completed', topic: 'School Book Chapter 4', location: 'Studio (In-Person)' },
+      { id: 'l3', studentId: 's2', studentName: 'Daniel Klein', weekId: '2026-W41', day: 'Monday', date: '2026-10-05', startTime: '16:30', endTime: '17:30', rate: 50, payment: 'Unpaid', method: 'Bank Transfer', status: 'Completed', topic: '5-Unit Module E Practice', location: 'Online (Zoom / Meet)' },
+      { id: 'l4', studentId: 's4', studentName: 'Emma Tal', weekId: '2026-W41', day: 'Tuesday', date: '2026-10-06', startTime: '15:30', endTime: '16:30', rate: 45, payment: 'Paid', method: 'PayBox', status: 'Completed', topic: 'Opinion Essay Writing', location: 'Studio (In-Person)' },
+      { id: 'l5', studentId: 's5', studentName: 'Noah Ben-David', weekId: '2026-W41', day: 'Wednesday', date: '2026-10-07', startTime: '16:00', endTime: '17:00', rate: 40, payment: 'Unpaid', method: 'Bit', status: 'Confirmed', topic: 'Irregular Verbs Drill', location: 'Studio (In-Person)' },
+      { id: 'l6', studentId: 's1', studentName: 'Maya Ronen', weekId: '2026-W41', day: 'Thursday', date: '2026-10-08', startTime: '16:30', endTime: '17:30', rate: 45, payment: 'Unpaid', method: 'Bit', status: 'Confirmed', topic: 'Conversation & Speech', location: 'Online (Zoom / Meet)' },
+      { id: 'l7', studentId: 's2', studentName: 'Daniel Klein', weekId: '2026-W41', day: 'Friday', date: '2026-10-09', startTime: '11:00', endTime: '12:00', rate: 50, payment: 'Unpaid', method: 'Bank Transfer', status: 'Confirmed', topic: 'Literature Analysis', location: 'Studio (In-Person)' }
+    ];
+
+    const SAMPLE_REQUESTS = [
+      {
+        id: 'r1',
+        studentId: 's1',
+        studentName: 'Maya Ronen',
+        lessonId: 'l6',
+        lessonSummary: 'Thursday (Oct 8) @ 16:30',
+        requestType: 'Reschedule',
+        message: 'Hi Teacher Helen! I have a school biology exam on Thursday afternoon. Could we please move our lesson to Thursday at 18:00 or Friday morning?',
+        dateSubmitted: '2026-10-06T18:30:00Z',
+        status: 'Answered',
+        teacherReply: 'Hi Maya! Yes, Thursday at 18:00 works well for me. I updated the schedule for you.',
+        teacherReplyDate: '2026-10-06T19:15:00Z'
+      },
+      {
+        id: 'r2',
+        studentId: 's5',
+        studentName: 'Noah Ben-David',
+        lessonId: 'l5',
+        lessonSummary: 'Wednesday (Oct 7) @ 16:00',
+        requestType: 'Cancel',
+        message: 'Hello Helen, Noah is not feeling well with a fever today and cannot attend. Can we make it up next week?',
+        dateSubmitted: '2026-10-07T08:15:00Z',
+        status: 'Pending',
+        teacherReply: '',
+        teacherReplyDate: null
+      }
+    ];
+
+    let students = JSON.parse(localStorage.getItem('helen_students')) || SAMPLE_STUDENTS;
+    let lessons = JSON.parse(localStorage.getItem('helen_lessons')) || SAMPLE_LESSONS;
+    let requests = JSON.parse(localStorage.getItem('helen_requests')) || SAMPLE_REQUESTS;
+    let session = JSON.parse(localStorage.getItem('helen_session')) || null;
+    let weekOffset = 0;
+    let activeWaContext = null;
+
+    const BASE_WEEK_SUNDAY = new Date(2026, 9, 4);
+
+    // API Detection
+    let isBackendActive = false;
+    const API_BASE = (window.location.protocol.startsWith('http')) ? '/api' : 'http://127.0.0.1:8000/api';
+
+    async function checkBackendConnection() {
+      try {
+        const res = await fetch(`${API_BASE}/health`, { method: 'GET' });
+        if (res.ok) {
+          isBackendActive = true;
+          document.getElementById('backendStatusPill').textContent = '🟢 Python Backend';
+          document.getElementById('backendStatusPill').classList.add('online');
+          await loadFromBackend();
+          return;
+        }
+      } catch (e) {
+        isBackendActive = false;
+        document.getElementById('backendStatusPill').textContent = '⚡ Local Mode (SQLite / Storage)';
+      }
+    }
+
+    async function loadFromBackend() {
+      try {
+        const [stRes, lsRes, rqRes] = await Promise.all([
+          fetch(`${API_BASE}/students`),
+          fetch(`${API_BASE}/lessons`),
+          fetch(`${API_BASE}/requests`)
+        ]);
+        if (stRes.ok) students = await stRes.json();
+        if (lsRes.ok) lessons = await lsRes.json();
+        if (rqRes.ok) requests = await rqRes.json();
+        persistData();
+        refreshUI();
+      } catch (err) {
+        console.warn('Backend sync error, using local state:', err);
+      }
+    }
+
+    function persistData() {
+      localStorage.setItem('helen_students', JSON.stringify(students));
+      localStorage.setItem('helen_lessons', JSON.stringify(lessons));
+      localStorage.setItem('helen_requests', JSON.stringify(requests));
+      localStorage.setItem('helen_session', JSON.stringify(session));
+    }
+
+    function triggerToast(text) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastMsg').textContent = text;
+      box.classList.add('visible');
+      setTimeout(() => box.classList.remove('visible'), 3200);
+    }
+
+    function getWeekData(offset = 0) {
+      const sun = new Date(BASE_WEEK_SUNDAY);
+      sun.setDate(sun.getDate() + (offset * 7));
+
+      const days = [];
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(sun);
+        d.setDate(d.getDate() + i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        days.push({
+          dayName: dayNames[i],
+          isoDate: `${yyyy}-${mm}-${dd}`,
+          displayDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          isToday: (offset === 0 && dayNames[i] === 'Wednesday')
+        });
+      }
+
+      const sat = new Date(sun);
+      sat.setDate(sat.getDate() + 6);
+
+      const label = `${sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${sat.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      const weekId = `2026-W${41 + offset}`;
+
+      return { sun, sat, label, days, weekId };
+    }
+
+    function shiftWeek(delta) {
+      weekOffset += delta;
+      refreshUI();
+    }
+
+    function resetToThisWeek() {
+      weekOffset = 0;
+      refreshUI();
+    }
+
+    /* Auth Tab switcher */
+    function switchAuthTab(tab) {
+      document.getElementById('tabBtnTeacherLogin').classList.toggle('active', tab === 'teacherLogin');
+      document.getElementById('tabBtnStudentLogin').classList.toggle('active', tab === 'studentLogin');
+      document.getElementById('tabBtnStudentRegister').classList.toggle('active', tab === 'studentRegister');
+
+      document.getElementById('paneTeacherLogin').style.display = (tab === 'teacherLogin') ? 'block' : 'none';
+      document.getElementById('paneStudentLogin').style.display = (tab === 'studentLogin') ? 'block' : 'none';
+      document.getElementById('paneStudentRegister').style.display = (tab === 'studentRegister') ? 'block' : 'none';
+    }
+
+    async function handleTeacherSignIn(e) {
+      e.preventDefault();
+      const user = document.getElementById('teacherEmailInput').value.trim();
+      const pass = document.getElementById('teacherPassInput').value.trim();
+
+      if (isBackendActive) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'teacher', usernameOrId: user, password: pass })
+          });
+          if (!res.ok) throw new Error((await res.json()).detail || 'Login failed');
+          session = await res.json();
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      } else {
+        if (pass !== 'helen123' && pass !== 'admin') {
+          alert('Invalid teacher password. Default is: helen123');
+          return;
+        }
+        session = { role: 'teacher', name: 'Helen' };
+      }
+
+      persistData();
+      triggerToast('Signed in as Teacher Helen');
+      refreshUI();
+    }
+
+    async function handleStudentSignIn(e) {
+      e.preventDefault();
+      const studentId = document.getElementById('loginStudentSelect').value;
+      const pass = document.getElementById('studentPassInput').value.trim();
+
+      if (isBackendActive) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'student', usernameOrId: studentId, password: pass })
+          });
+          if (!res.ok) throw new Error((await res.json()).detail || 'Login failed');
+          session = await res.json();
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      } else {
+        const st = students.find(s => s.id === studentId);
+        if (!st) { alert('Student not found.'); return; }
+        if (st.password && st.password !== pass) {
+          alert('Incorrect password. Default: student123');
+          return;
+        }
+        session = { role: 'student', studentId: st.id, name: st.name };
+      }
+
+      persistData();
+      triggerToast(`Welcome back, ${session.name}!`);
+      refreshUI();
+    }
+
+    async function handleStudentSignUp(e) {
+      e.preventDefault();
+      const name = document.getElementById('regStudentName').value.trim();
+      const grade = document.getElementById('regStudentGrade').value.trim();
+      const pass = document.getElementById('regStudentPassword').value.trim();
+      const phone = document.getElementById('regStudentPhone').value.trim();
+      const notes = document.getElementById('regStudentNotes').value.trim();
+
+      let cleanDigits = phone.replace(/\D/g, '');
+      if (cleanDigits.startsWith('0')) cleanDigits = '972' + cleanDigits.substring(1);
+
+      if (isBackendActive) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, grade, phone, notes, password: pass })
+          });
+          if (!res.ok) throw new Error('Registration failed');
+          session = await res.json();
+          await loadFromBackend();
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      } else {
+        const newStudent = {
+          id: 's_' + Date.now(),
+          name, grade: grade || 'English Student', rate: 45, phone, wa: cleanDigits, notes, password: pass || 'student123'
+        };
+        students.push(newStudent);
+        session = { role: 'student', studentId: newStudent.id, name: newStudent.name };
+      }
+
+      persistData();
+      triggerToast(`Welcome to the studio, ${session.name}!`);
+      refreshUI();
+    }
+
+    function handleSignOut() {
+      session = null;
+      persistData();
+      triggerToast('Signed out.');
+      refreshUI();
+    }
+
+    function quickLoginDemo(target) {
+      if (target === 'teacher') {
+        session = { role: 'teacher', name: 'Helen' };
+      } else {
+        const st = students.find(s => s.id === target);
+        if (st) session = { role: 'student', studentId: st.id, name: st.name };
+      }
+      persistData();
+      triggerToast('Signed in via Demo!');
+      refreshUI();
+    }
+
+    function populateLoginStudentDropdown() {
+      const select = document.getElementById('loginStudentSelect');
+      select.innerHTML = students.map(s => `
+        <option value="${s.id}">👤 ${s.name} (${s.grade})</option>
+      `).join('');
+    }
+
+    function showTeacherTab(tab, btn) {
+      document.querySelectorAll('.t-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.getElementById('tTabSchedule').style.display = (tab === 'schedule') ? 'block' : 'none';
+      document.getElementById('tTabRequests').style.display = (tab === 'requests') ? 'block' : 'none';
+      document.getElementById('tTabPayments').style.display = (tab === 'payments') ? 'block' : 'none';
+      document.getElementById('tTabRoster').style.display = (tab === 'roster') ? 'block' : 'none';
+      document.getElementById('tTabBackup').style.display = (tab === 'backup') ? 'block' : 'none';
+
+      if (tab === 'requests') renderTeacherRequests();
+      if (tab === 'payments') renderPaymentLedger();
+      if (tab === 'roster') renderStudentRoster();
+    }
+
+    /* ==========================================================
+       RENDER ORCHESTRATION
+       ========================================================== */
+    function refreshUI() {
+      populateLoginStudentDropdown();
+
+      const authScreen = document.getElementById('authScreen');
+      const studentWrap = document.getElementById('studentViewWrap');
+      const teacherWrap = document.getElementById('teacherViewWrap');
+      const subnavBar = document.getElementById('subnavBar');
+      const userPill = document.getElementById('userPillDisplay');
+      const signOutBtn = document.getElementById('signOutBtn');
+      const teacherActions = document.getElementById('teacherActionButtons');
+
+      if (!session) {
+        authScreen.style.display = 'flex';
+        studentWrap.style.display = 'none';
+        teacherWrap.style.display = 'none';
+        subnavBar.style.display = 'none';
+        userPill.style.display = 'none';
+        signOutBtn.style.display = 'none';
+        return;
+      }
+
+      authScreen.style.display = 'none';
+      subnavBar.style.display = 'block';
+      userPill.style.display = 'flex';
+      signOutBtn.style.display = 'inline-flex';
+
+      const week = getWeekData(weekOffset);
+      document.getElementById('currentWeekRange').textContent = week.label;
+      document.getElementById('weekDescriptor').textContent = (weekOffset === 0)
+        ? 'Current Active Week'
+        : (weekOffset > 0 ? `+${weekOffset} Week(s) Ahead` : `${Math.abs(weekOffset)} Week(s) Ago`);
+
+      if (session.role === 'teacher') {
+        document.getElementById('userPillIcon').textContent = '👩‍🏫';
+        document.getElementById('userPillName').textContent = 'Teacher Helen (Mom)';
+        teacherActions.style.display = 'flex';
+        studentWrap.style.display = 'none';
+        teacherWrap.style.display = 'block';
+        renderTeacherDashboard(week);
+      } else {
+        const student = students.find(s => s.id === session.studentId) || students[0];
+        document.getElementById('userPillIcon').textContent = '🎓';
+        document.getElementById('userPillName').textContent = student ? student.name : 'Student';
+        teacherActions.style.display = 'none';
+        studentWrap.style.display = 'block';
+        teacherWrap.style.display = 'none';
+        renderStudentPortal(week, student);
+      }
+
+      updateBadges();
+    }
+
+    function updateBadges() {
+      const pendingCount = requests.filter(r => r.status === 'Pending').length;
+      const bTab = document.getElementById('pendingBadgeTab');
+      if (bTab) {
+        bTab.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+        bTab.textContent = pendingCount;
+      }
+    }
+
+    /* ==========================================================
+       STUDENT PORTAL
+       ========================================================== */
+    function renderStudentPortal(week, student) {
+      if (!student) return;
+      document.getElementById('studentGreetingTitle').textContent = `Hello, ${student.name}! 👋`;
+
+      const myLessonsThisWeek = lessons.filter(l => l.studentId === student.id && l.weekId === week.weekId);
+
+      const heroContainer = document.getElementById('studentNextAppointmentHero');
+      if (myLessonsThisWeek.length > 0) {
+        const next = myLessonsThisWeek[0];
+        heroContainer.innerHTML = `
+          <div class="next-appointment-hero">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+              <div>
+                <span class="badge badge-confirmed" style="margin-bottom:8px;">Your Scheduled Session</span>
+                <div style="font-size:1.6rem; font-weight:800; color:var(--slate-900);">
+                  ${next.day}, ${next.date} at ${next.startTime} – ${next.endTime}
+                </div>
+                <div style="font-size:0.95rem; color:var(--slate-600); margin-top:4px;">
+                  📖 Focus: <strong>${next.topic || 'English Tutoring'}</strong>
+                </div>
+              </div>
+              <div>
+                <span class="badge ${next.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}" style="font-size:0.85rem; padding:6px 14px;">
+                  ${next.payment === 'Paid' ? '✓ Lesson Fee Paid' : `⏳ Payment Due: $${next.rate}`}
+                </span>
+              </div>
+            </div>
+
+            <div class="appointment-meta-grid">
+              <div class="meta-box">
+                <span class="meta-label">Location / Mode</span>
+                <span class="meta-value">📍 ${next.location}</span>
+              </div>
+              <div class="meta-box">
+                <span class="meta-label">Teacher</span>
+                <span class="meta-value">👩‍🏫 Teacher Helen</span>
+              </div>
+              <div class="meta-box">
+                <span class="meta-label">Duration</span>
+                <span class="meta-value">⏱️ 60 Minutes</span>
+              </div>
+              <div class="meta-box">
+                <span class="meta-label">Status</span>
+                <span class="meta-value">
+                  <span class="badge ${next.status === 'Completed' ? 'badge-paid' : (next.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">
+                    ${next.status}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        heroContainer.innerHTML = `
+          <div class="next-appointment-hero" style="text-align:center; padding:36px 20px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--slate-400); margin-bottom:12px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--slate-800); margin-bottom:6px;">No Lessons Booked This Week</div>
+            <p style="font-size:0.9rem; color:var(--slate-500); max-width:460px; margin:0 auto;">
+              You do not have any lessons scheduled between ${week.label}. If you would like to book an extra lesson, submit a request below.
+            </p>
+          </div>
+        `;
+      }
+
+      const apptList = document.getElementById('myAppointmentsList');
+      const targetSelect = document.getElementById('reqTargetLessonSelect');
+
+      if (myLessonsThisWeek.length === 0) {
+        apptList.innerHTML = `<div style="text-align:center; padding:30px; color:var(--slate-400); font-size:0.9rem;">No appointments for ${student.name} this week.</div>`;
+        targetSelect.innerHTML = `<option value="">No lesson scheduled this week</option>`;
+      } else {
+        apptList.innerHTML = myLessonsThisWeek.map(l => {
+          const hasPending = requests.some(r => r.lessonId === l.id && r.status === 'Pending');
+          return `
+            <div class="private-lesson-card ${l.status === 'Cancelled' ? 'cancelled' : (l.status === 'Completed' ? 'completed' : '')}">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="font-size:0.95rem; font-weight:800; color:var(--slate-900);">
+                  📅 ${l.day}, ${l.date}
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <span class="badge ${l.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">
+                    ${l.payment === 'Paid' ? 'Paid' : `Pending: $${l.rate}`}
+                  </span>
+                  <span class="badge ${l.status === 'Completed' ? 'badge-paid' : (l.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">
+                    ${l.status}
+                  </span>
+                </div>
+              </div>
+
+              <div style="font-size:1.1rem; font-weight:800; color:var(--primary); margin-bottom:6px;">
+                🕒 ${l.startTime} – ${l.endTime}
+              </div>
+
+              <div style="font-size:0.85rem; color:var(--slate-700); margin-bottom:4px;">
+                📖 Focus: ${l.topic || 'English Tutoring'}
+              </div>
+
+              <div style="font-size:0.8rem; color:var(--slate-500); display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                <span>📍 ${l.location}</span>
+                ${hasPending ? '<span class="badge badge-unpaid">Pending Change Request</span>' : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        targetSelect.innerHTML = myLessonsThisWeek.map(l => `
+          <option value="${l.id}">${l.day} (${l.date}) @ ${l.startTime} - ${l.topic || 'Lesson'}</option>
+        `).join('');
+      }
+
+      const myRequests = requests.filter(r => r.studentId === student.id);
+      const feed = document.getElementById('studentRequestFeed');
+
+      if (myRequests.length === 0) {
+        feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--slate-400); font-size:0.88rem;">You haven't sent any messages or change requests yet.</div>`;
+      } else {
+        feed.innerHTML = myRequests.map(r => `
+          <div class="req-item-card ${r.status === 'Pending' ? 'pending' : 'resolved'}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span class="badge ${r.status === 'Pending' ? 'badge-unpaid' : 'badge-paid'}">${r.status}</span>
+                <strong style="margin-left: 8px; font-size: 0.92rem;">${r.requestType} for ${r.lessonSummary}</strong>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--slate-400);">${new Date(r.dateSubmitted).toLocaleDateString()}</span>
+            </div>
+
+            <div class="chat-bubble-student">
+              "${r.message}"
+            </div>
+
+            ${r.teacherReply ? `
+              <div class="chat-bubble-teacher">
+                <div class="teacher-badge">👩‍🏫 Teacher Helen's Answer:</div>
+                <div style="font-weight:600;">"${r.teacherReply}"</div>
+                <div style="font-size:0.72rem; color:#4338ca; margin-top:6px;">Replied on ${new Date(r.teacherReplyDate).toLocaleDateString()}</div>
+              </div>
+            ` : `
+              <div style="font-size: 0.8rem; color: var(--amber-700); font-weight: 600; margin-top: 6px; display:flex; align-items:center; gap:6px;">
+                ⏳ Teacher Helen has received your message and will answer you here shortly.
+              </div>
+            `}
+          </div>
+        `).join('');
+      }
+    }
+
+    async function handleStudentRequestSubmit(e) {
+      e.preventDefault();
+      const lessonId = document.getElementById('reqTargetLessonSelect').value;
+      const reqType = document.getElementById('reqTypeSelect').value;
+      const note = document.getElementById('reqNoteText').value.trim();
+
+      if (!lessonId) { alert('Please select a lesson.'); return; }
+
+      const lesson = lessons.find(l => l.id === lessonId);
+      const student = students.find(s => s.id === session.studentId);
+
+      const newReq = {
+        id: 'req_' + Date.now(),
+        studentId: session.studentId,
+        studentName: student ? student.name : 'Student',
+        lessonId: lessonId,
+        lessonSummary: lesson ? `${lesson.day} @ ${lesson.startTime}` : 'Session',
+        requestType: reqType,
+        message: note,
+        dateSubmitted: new Date().toISOString(),
+        status: 'Pending',
+        teacherReply: '',
+        teacherReplyDate: null
+      };
+
+      if (isBackendActive) {
+        try {
+          await fetch(`${API_BASE}/requests`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newReq)
+          });
+          await loadFromBackend();
+        } catch (err) {
+          requests.unshift(newReq);
+          persistData();
+        }
+      } else {
+        requests.unshift(newReq);
+        persistData();
+      }
+
+      document.getElementById('reqNoteText').value = '';
+      triggerToast('Request sent to Teacher Helen!');
+      refreshUI();
+    }
+
+    /* ==========================================================
+       TEACHER DASHBOARD
+       ========================================================== */
+    function renderTeacherDashboard(week) {
+      const weekLessons = lessons.filter(l => l.weekId === week.weekId);
+
+      const totalCount = weekLessons.length;
+      const completedCount = weekLessons.filter(l => l.status === 'Completed').length;
+      const pendingCount = requests.filter(r => r.status === 'Pending').length;
+
+      let totalRev = 0;
+      let paidRev = 0;
+      let unpaidLessonsCount = 0;
+
+      weekLessons.forEach(l => {
+        if (l.status !== 'Cancelled') {
+          totalRev += (Number(l.rate) || 0);
+          if (l.payment === 'Paid') {
+            paidRev += (Number(l.rate) || 0);
+          } else {
+            unpaidLessonsCount++;
+          }
+        }
+      });
+
+      const pct = totalRev > 0 ? Math.round((paidRev / totalRev) * 100) : 0;
+      document.getElementById('mProgressFill').style.width = `${pct}%`;
+
+      document.getElementById('mTotalLessons').textContent = totalCount;
+      document.getElementById('mCompletedSubtitle').textContent = `${completedCount} sessions completed`;
+      document.getElementById('mPendingReqs').textContent = pendingCount;
+      document.getElementById('mTotalRevenue').textContent = `$${totalRev}`;
+      document.getElementById('mPaidSubtitle').textContent = `$${paidRev} collected (${pct}%)`;
+      document.getElementById('mUnpaidBalance').textContent = `$${totalRev - paidRev}`;
+      document.getElementById('mUnpaidSessions').textContent = `${unpaidLessonsCount} unpaid lessons`;
+
+      renderTeacherScheduleBoard(week);
+    }
+
+    function handleScheduleFilterChange() {
+      const week = getWeekData(weekOffset);
+      renderTeacherScheduleBoard(week);
+    }
+
+    function renderTeacherScheduleBoard(week) {
+      const container = document.getElementById('teacherScheduleBoard');
+      let weekLessons = lessons.filter(l => l.weekId === week.weekId);
+
+      // Search & Filters
+      const searchQ = (document.getElementById('scheduleSearchInput')?.value || '').toLowerCase();
+      const dayFilter = document.getElementById('scheduleDayFilter')?.value || 'all';
+      const locFilter = document.getElementById('scheduleLocFilter')?.value || 'all';
+
+      if (searchQ) {
+        weekLessons = weekLessons.filter(l => 
+          l.studentName.toLowerCase().includes(searchQ) || (l.topic || '').toLowerCase().includes(searchQ)
+        );
+      }
+      if (locFilter !== 'all') {
+        weekLessons = weekLessons.filter(l => l.location.includes(locFilter));
+      }
+
+      container.innerHTML = week.days.map(d => {
+        if (dayFilter !== 'all' && d.dayName !== dayFilter) return '';
+
+        const dayLessons = weekLessons.filter(l => l.day === d.dayName);
+        dayLessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+        return `
+          <div class="day-column">
+            <div class="day-header ${d.isToday ? 'today' : ''}">
+              <span class="day-title">${d.dayName}</span>
+              <span class="day-date-tag">${d.displayDate}</span>
+            </div>
+            <div class="day-content">
+              ${dayLessons.length === 0 ? `
+                <div class="empty-state-day">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:6px;"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>
+                  No Lessons
+                </div>
+              ` : dayLessons.map(l => {
+                const hasPending = requests.some(r => r.lessonId === l.id && r.status === 'Pending');
+
+                let cardClasses = 'teacher-lesson-card';
+                if (l.status === 'Cancelled') cardClasses += ' status-cancelled';
+                if (l.status === 'Completed') cardClasses += ' status-completed';
+                if (hasPending) cardClasses += ' has-pending-req';
+
+                return `
+                  <div class="${cardClasses}">
+                    <div class="lesson-time-row">
+                      <span class="lesson-time">
+                        ${l.startTime}–${l.endTime}
+                      </span>
+                      <span class="badge ${l.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">
+                        ${l.payment === 'Paid' ? 'Paid' : `$${l.rate}`}
+                      </span>
+                    </div>
+
+                    <div class="student-badge-name">
+                      👤 ${l.studentName}
+                    </div>
+
+                    <div class="lesson-topic">
+                      ${l.topic || 'General Practice'}
+                    </div>
+
+                    <div style="font-size:0.75rem; color:var(--slate-500); display:flex; justify-content:space-between; align-items:center;">
+                      <span>📍 ${l.location.includes('Zoom') ? 'Zoom' : 'Studio'}</span>
+                      ${hasPending ? '<span class="badge badge-unpaid">Pending Req</span>' : ''}
+                    </div>
+
+                    <div class="lesson-actions-bar">
+                      <button class="action-icon-btn" onclick="editLesson('${l.id}')">Edit</button>
+                      <button class="action-icon-btn" onclick="quickTogglePay('${l.id}')">
+                        ${l.payment === 'Paid' ? 'Unpay' : 'Mark Paid'}
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+
+              <button class="btn btn-secondary btn-sm" style="margin-top:auto; width:100%; border-style:dashed;" onclick="quickAddForDay('${d.dayName}', '${d.isoDate}')">
+                + Add Slot
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTeacherRequests() {
+      const feed = document.getElementById('teacherRequestsFeed');
+      if (requests.length === 0) {
+        feed.innerHTML = `<div style="text-align:center; padding:40px; color:var(--slate-400);">No requests in inbox.</div>`;
+        return;
+      }
+
+      feed.innerHTML = requests.map(r => {
+        const isPending = (r.status === 'Pending');
+        return `
+          <div class="req-item-card ${isPending ? 'pending' : 'resolved'}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span class="badge ${isPending ? 'badge-unpaid' : 'badge-paid'}">${r.status}</span>
+                <strong style="margin-left: 8px; font-size: 1rem;">${r.studentName}</strong>
+                <span style="font-size:0.85rem; color:var(--slate-500); margin-left:6px;">(${r.requestType})</span>
+              </div>
+              <span style="font-size:0.75rem; color:var(--slate-400);">${new Date(r.dateSubmitted).toLocaleString()}</span>
+            </div>
+
+            <div style="font-size:0.85rem; margin-top:6px; color:var(--slate-600);">
+              <strong>Target Session:</strong> ${r.lessonSummary}
+            </div>
+
+            <div class="chat-bubble-student">
+              "${r.message}"
+            </div>
+
+            ${r.teacherReply ? `
+              <div class="chat-bubble-teacher" style="margin-bottom:12px;">
+                <div class="teacher-badge">Your Sent Answer:</div>
+                <div>"${r.teacherReply}"</div>
+              </div>
+            ` : ''}
+
+            <!-- Quick Template Chips -->
+            <div style="margin: 10px 0; display: flex; gap: 6px; flex-wrap: wrap;">
+              <span class="quick-chip" onclick="applyQuickReply('${r.id}', 'Approved! See you at the new time.')">⚡ Approved</span>
+              <span class="quick-chip" onclick="applyQuickReply('${r.id}', 'Cancellation confirmed. We will make it up next week.')">⚡ Confirm Cancel</span>
+              <span class="quick-chip" onclick="applyQuickReply('${r.id}', 'Sorry, that time is taken. Could you do an hour later?')">⚡ Suggest Different Hour</span>
+            </div>
+
+            <div style="margin-top: 10px;">
+              <textarea id="tReplyInput_${r.id}" class="input-field" style="min-height:60px; margin-bottom:8px;" placeholder="Type your answer to ${r.studentName}...">${r.teacherReply || ''}</textarea>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" onclick="submitTeacherReply('${r.id}')">
+                  Send Answer to Student
+                </button>
+                ${isPending ? `
+                  <button class="btn btn-secondary btn-sm" onclick="editLesson('${r.lessonId}')">
+                    ✏️ Update Slot in Timetable
+                  </button>
+                  <button class="btn btn-sm" style="background:var(--rose-50); color:var(--rose-600); border:1px solid #fecdd3;" onclick="cancelLessonFromRequest('${r.id}')">
+                    Mark Lesson Cancelled
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function applyQuickReply(reqId, text) {
+      document.getElementById(`tReplyInput_${reqId}`).value = text;
+    }
+
+    async function submitTeacherReply(reqId) {
+      const text = document.getElementById(`tReplyInput_${reqId}`).value.trim();
+      if (!text) { alert('Please write an answer for the student.'); return; }
+
+      if (isBackendActive) {
+        try {
+          await fetch(`${API_BASE}/requests/${reqId}/reply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reply: text, newStatus: 'Answered' })
+          });
+          await loadFromBackend();
+        } catch (err) {
+          updateLocalReq(reqId, text);
+        }
+      } else {
+        updateLocalReq(reqId, text);
+      }
+
+      triggerToast('Reply sent to student!');
+      renderTeacherRequests();
+      updateBadges();
+    }
+
+    function updateLocalReq(reqId, text) {
+      const req = requests.find(r => r.id === reqId);
+      if (req) {
+        req.teacherReply = text;
+        req.teacherReplyDate = new Date().toISOString();
+        req.status = 'Answered';
+        persistData();
+      }
+    }
+
+    async function cancelLessonFromRequest(reqId) {
+      const req = requests.find(r => r.id === reqId);
+      if (req && req.lessonId) {
+        const l = lessons.find(les => les.id === req.lessonId);
+        if (l) {
+          l.status = 'Cancelled';
+          req.status = 'Answered';
+          req.teacherReply = req.teacherReply || 'Your cancellation has been noted and updated in the schedule.';
+          req.teacherReplyDate = new Date().toISOString();
+
+          if (isBackendActive) {
+            try {
+              await fetch(`${API_BASE}/lessons`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(l)
+              });
+              await fetch(`${API_BASE}/requests/${reqId}/reply`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reply: req.teacherReply, newStatus: 'Answered' })
+              });
+              await loadFromBackend();
+            } catch (err) {
+              persistData();
+            }
+          } else {
+            persistData();
+          }
+
+          triggerToast('Lesson cancelled and student notified.');
+          renderTeacherRequests();
+          refreshUI();
+        }
+      }
+    }
+
+    /* Payments Tracker */
+    function renderPaymentLedger() {
+      const filter = document.getElementById('paymentFilterSelect').value;
+      const week = getWeekData(weekOffset);
+      const weekLessons = lessons.filter(l => l.weekId === week.weekId);
+
+      let displayed = weekLessons;
+      if (filter === 'unpaid') displayed = weekLessons.filter(l => l.payment === 'Unpaid');
+      if (filter === 'paid') displayed = weekLessons.filter(l => l.payment === 'Paid');
+
+      const tbody = document.getElementById('paymentLedgerTbody');
+      if (displayed.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--slate-400);">No lessons match this filter.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = displayed.map(l => {
+        const isPaid = (l.payment === 'Paid');
+        const student = students.find(s => s.id === l.studentId);
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:700; color:var(--slate-900);">${l.studentName}</div>
+              <div style="font-size:0.75rem; color:var(--slate-500);">${l.topic || 'Lesson'}</div>
+            </td>
+            <td>${l.day}, ${l.date} at ${l.startTime}</td>
+            <td><strong>$${l.rate}</strong></td>
+            <td><span class="badge ${l.status === 'Completed' ? 'badge-paid' : (l.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">${l.status}</span></td>
+            <td>
+              <span class="badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}">
+                ${isPaid ? '✓ Paid' : '⏳ Pending'}
+              </span>
+            </td>
+            <td>
+              <select class="input-field" style="padding:4px 8px; font-size:0.8rem; width:auto;" onchange="updatePaymentMethod('${l.id}', this.value)">
+                <option value="Bit" ${l.method === 'Bit' ? 'selected' : ''}>Bit</option>
+                <option value="PayBox" ${l.method === 'PayBox' ? 'selected' : ''}>PayBox</option>
+                <option value="Cash" ${l.method === 'Cash' ? 'selected' : ''}>Cash</option>
+                <option value="Bank Transfer" ${l.method === 'Bank Transfer' ? 'selected' : ''}>Bank Transfer</option>
+              </select>
+            </td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-secondary btn-sm" onclick="quickTogglePay('${l.id}')">
+                  ${isPaid ? 'Mark Unpaid' : 'Mark as Paid'}
+                </button>
+                <button class="wa-btn" onclick="openWaComposer('${l.id}')">
+                  💬 WhatsApp
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openWaComposer(lessonId) {
+      const l = lessons.find(les => les.id === lessonId);
+      if (!l) return;
+      const student = students.find(s => s.id === l.studentId);
+      activeWaContext = { lesson: l, student: student };
+
+      setWaTemplate(l.payment === 'Paid' ? 'confirm' : 'payment');
+      openModal('waModal');
+    }
+
+    function setWaTemplate(type) {
+      if (!activeWaContext) return;
+      const { lesson, student } = activeWaContext;
+      const name = student ? student.name : 'Student';
+      const phone = student && student.wa ? student.wa : '';
+
+      let text = '';
+      if (type === 'reminder') {
+        text = `Hi ${name}! This is Helen. Looking forward to our English lesson on ${lesson.day} (${lesson.date}) at ${lesson.startTime}. Please have your homework ready!`;
+      } else if (type === 'payment') {
+        text = `Hi ${name}! This is Helen. A gentle reminder regarding our English session on ${lesson.day} (${lesson.date}) — fee is $${lesson.rate} (via ${lesson.method || 'Bit'}). Thank you!`;
+      } else if (type === 'confirm') {
+        text = `Hi ${name}! Your English lesson for ${lesson.day} at ${lesson.startTime} is confirmed. Thank you and see you soon!`;
+      }
+
+      document.getElementById('waComposerText').value = text;
+      const encoded = encodeURIComponent(text);
+      document.getElementById('waSendAnchor').href = phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+    }
+
+    function copyWaText() {
+      const t = document.getElementById('waComposerText').value;
+      navigator.clipboard.writeText(t).then(() => triggerToast('Message copied!'));
+    }
+
+    async function updatePaymentMethod(lessonId, method) {
+      const l = lessons.find(les => les.id === lessonId);
+      if (l) {
+        l.method = method;
+        if (isBackendActive) {
+          try {
+            await fetch(`${API_BASE}/lessons`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(l)
+            });
+          } catch(e){}
+        }
+        persistData();
+        triggerToast('Payment method updated.');
+      }
+    }
+
+    async function quickTogglePay(lessonId) {
+      const l = lessons.find(les => les.id === lessonId);
+      if (l) {
+        l.payment = (l.payment === 'Paid') ? 'Unpaid' : 'Paid';
+        if (isBackendActive) {
+          try {
+            await fetch(`${API_BASE}/lessons`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(l)
+            });
+          } catch(e){}
+        }
+        persistData();
+        triggerToast(`Updated payment for ${l.studentName}`);
+        refreshUI();
+        if (document.getElementById('tTabPayments').style.display === 'block') {
+          renderPaymentLedger();
+        }
+      }
+    }
+
+    /* Roster */
+    function renderStudentRoster() {
+      const tbody = document.getElementById('studentRosterTbody');
+      tbody.innerHTML = students.map(s => {
+        return `
+          <tr>
+            <td><strong>${s.name}</strong></td>
+            <td><span class="badge" style="background:#f1f5f9; color:var(--slate-700);">${s.grade}</span></td>
+            <td>${s.phone || 'N/A'}</td>
+            <td><strong>$${s.rate}/hr</strong></td>
+            <td style="font-size:0.8rem; color:var(--slate-500); max-width:220px;">${s.notes || '-'}</td>
+            <td>
+              <button class="wa-btn" onclick="openDirectStudentWa('${s.id}')">
+                💬 WhatsApp
+              </button>
+            </td>
+            <td>
+              <button class="action-icon-btn" onclick="editStudent('${s.id}')">Edit</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openDirectStudentWa(studentId) {
+      const st = students.find(s => s.id === studentId);
+      if (!st) return;
+      activeWaContext = { student: st, lesson: { day: 'our next lesson', date: '', startTime: '', rate: st.rate, method: 'Bit' } };
+      setWaTemplate('confirm');
+      openModal('waModal');
+    }
+
+    function openLessonModal() {
+      document.getElementById('lessonModalHeader').textContent = 'Add Private Session';
+      document.getElementById('modalLessonId').value = '';
+
+      const week = getWeekData(weekOffset);
+      document.getElementById('modalLessonDate').value = week.days[0].isoDate;
+      document.getElementById('modalLessonDay').value = week.days[0].dayName;
+      document.getElementById('modalLessonStart').value = '16:00';
+      document.getElementById('modalLessonEnd').value = '17:00';
+      document.getElementById('modalLessonTopic').value = '';
+      document.getElementById('modalLessonPayment').value = 'Unpaid';
+      document.getElementById('modalLessonStatus').value = 'Confirmed';
+
+      const mSelect = document.getElementById('modalLessonStudent');
+      mSelect.innerHTML = students.map(s => `<option value="${s.id}">👤 ${s.name} (${s.grade})</option>`).join('');
+
+      handleModalStudentChange();
+      openModal('lessonModal');
+    }
+
+    function quickAddForDay(dayName, isoDate) {
+      openLessonModal();
+      document.getElementById('modalLessonDay').value = dayName;
+      document.getElementById('modalLessonDate').value = isoDate;
+    }
+
+    function handleModalStudentChange() {
+      const studentId = document.getElementById('modalLessonStudent').value;
+      const s = students.find(st => st.id === studentId);
+      if (s) document.getElementById('modalLessonRate').value = s.rate || 45;
+    }
+
+    function editLesson(lessonId) {
+      const l = lessons.find(les => les.id === lessonId);
+      if (!l) return;
+
+      document.getElementById('lessonModalHeader').textContent = 'Edit Session';
+      document.getElementById('modalLessonId').value = l.id;
+      
+      const mSelect = document.getElementById('modalLessonStudent');
+      mSelect.innerHTML = students.map(s => `<option value="${s.id}" ${s.id === l.studentId ? 'selected' : ''}>👤 ${s.name} (${s.grade})</option>`).join('');
+      
+      document.getElementById('modalLessonDay').value = l.day;
+      document.getElementById('modalLessonDate').value = l.date;
+      document.getElementById('modalLessonStart').value = l.startTime;
+      document.getElementById('modalLessonEnd').value = l.endTime;
+      document.getElementById('modalLessonRate').value = l.rate;
+      document.getElementById('modalLessonPayment').value = l.payment;
+      document.getElementById('modalLessonTopic').value = l.topic || '';
+      document.getElementById('modalLessonLocation').value = l.location;
+      document.getElementById('modalLessonStatus').value = l.status;
+
+      openModal('lessonModal');
+    }
+
+    async function handleLessonSave(e) {
+      e.preventDefault();
+      const editId = document.getElementById('modalLessonId').value;
+      const studentId = document.getElementById('modalLessonStudent').value;
+      const student = students.find(s => s.id === studentId);
+      const week = getWeekData(weekOffset);
+
+      const data = {
+        id: editId || ('l_' + Date.now()),
+        studentId,
+        studentName: student ? student.name : 'Student',
+        weekId: week.weekId,
+        day: document.getElementById('modalLessonDay').value,
+        date: document.getElementById('modalLessonDate').value,
+        startTime: document.getElementById('modalLessonStart').value,
+        endTime: document.getElementById('modalLessonEnd').value,
+        rate: Number(document.getElementById('modalLessonRate').value) || 0,
+        payment: document.getElementById('modalLessonPayment').value,
+        method: 'Bit',
+        topic: document.getElementById('modalLessonTopic').value.trim(),
+        location: document.getElementById('modalLessonLocation').value,
+        status: document.getElementById('modalLessonStatus').value
+      };
+
+      if (isBackendActive) {
+        try {
+          await fetch(`${API_BASE}/lessons`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          await loadFromBackend();
+        } catch(err) {
+          saveLocalLesson(editId, data);
+        }
+      } else {
+        saveLocalLesson(editId, data);
+      }
+
+      persistData();
+      closeModal('lessonModal');
+      refreshUI();
+      triggerToast('Lesson saved successfully.');
+    }
+
+    function saveLocalLesson(editId, data) {
+      if (editId) {
+        const idx = lessons.findIndex(l => l.id === editId);
+        if (idx !== -1) lessons[idx] = data;
+      } else {
+        lessons.push(data);
+      }
+    }
+
+    function duplicateCurrentWeek() {
+      const curWeek = getWeekData(weekOffset);
+      const nextWeek = getWeekData(weekOffset + 1);
+
+      const curLessons = lessons.filter(l => l.weekId === curWeek.weekId);
+      if (curLessons.length === 0) {
+        alert('No lessons found in this week to copy.');
+        return;
+      }
+
+      if (!confirm(`Duplicate all ${curLessons.length} lessons into next week (${nextWeek.label})?`)) return;
+
+      curLessons.forEach(l => {
+        const targetDay = nextWeek.days.find(d => d.dayName === l.day);
+        const copyItem = {
+          ...l,
+          id: 'l_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          weekId: nextWeek.weekId,
+          date: targetDay ? targetDay.isoDate : l.date,
+          payment: 'Unpaid',
+          status: 'Confirmed'
+        };
+        lessons.push(copyItem);
+      });
+
+      persistData();
+      shiftWeek(1);
+      triggerToast('Schedule copied to next week!');
+    }
+
+    function openStudentModal() {
+      document.getElementById('studentModalHeader').textContent = 'Add Student';
+      document.getElementById('modalStudentId').value = '';
+      document.getElementById('modalStudentName').value = '';
+      document.getElementById('modalStudentGrade').value = '';
+      document.getElementById('modalStudentRate').value = '45';
+      document.getElementById('modalStudentPhone').value = '';
+      document.getElementById('modalStudentNotes').value = '';
+      openModal('studentModal');
+    }
+
+    function editStudent(studentId) {
+      const s = students.find(st => st.id === studentId);
+      if (!s) return;
+
+      document.getElementById('studentModalHeader').textContent = 'Edit Student Profile';
+      document.getElementById('modalStudentId').value = s.id;
+      document.getElementById('modalStudentName').value = s.name;
+      document.getElementById('modalStudentGrade').value = s.grade;
+      document.getElementById('modalStudentRate').value = s.rate;
+      document.getElementById('modalStudentPhone').value = s.phone;
+      document.getElementById('modalStudentNotes').value = s.notes;
+      openModal('studentModal');
+    }
+
+    async function handleStudentSave(e) {
+      e.preventDefault();
+      const editId = document.getElementById('modalStudentId').value;
+      const phoneRaw = document.getElementById('modalStudentPhone').value.trim();
+      let cleanDigits = phoneRaw.replace(/\D/g, '');
+      if (cleanDigits.startsWith('0')) cleanDigits = '972' + cleanDigits.substring(1);
+
+      const data = {
+        id: editId || ('s_' + Date.now()),
+        name: document.getElementById('modalStudentName').value.trim(),
+        grade: document.getElementById('modalStudentGrade').value.trim(),
+        rate: Number(document.getElementById('modalStudentRate').value) || 45,
+        phone: phoneRaw,
+        wa: cleanDigits,
+        notes: document.getElementById('modalStudentNotes').value.trim(),
+        password: 'student123'
+      };
+
+      if (editId) {
+        const idx = students.findIndex(s => s.id === editId);
+        if (idx !== -1) {
+          data.password = students[idx].password || 'student123';
+          students[idx] = data;
+        }
+      } else {
+        students.push(data);
+      }
+
+      persistData();
+      closeModal('studentModal');
+      renderStudentRoster();
+      refreshUI();
+      triggerToast('Student profile saved.');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    function exportBackupFile() {
+      const backup = { timestamp: new Date().toISOString(), students, lessons, requests };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `english_studio_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      triggerToast('Backup downloaded.');
+    }
+
+    function importBackupFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data.students && data.lessons) {
+            students = data.students;
+            lessons = data.lessons;
+            requests = data.requests || [];
+            persistData();
+            triggerToast('Backup restored successfully!');
+            refreshUI();
+          }
+        } catch (err) {
+          alert('Invalid backup JSON format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetToSampleData() {
+      if (confirm('Reset back to default demo schedule? All custom data will be cleared.')) {
+        students = SAMPLE_STUDENTS;
+        lessons = SAMPLE_LESSONS;
+        requests = SAMPLE_REQUESTS;
+        session = null;
+        persistData();
+        triggerToast('Reset to demo data.');
+        refreshUI();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      checkBackendConnection();
+      refreshUI();
+    });
+  </script>
+</body>
+</html>
