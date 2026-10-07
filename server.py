@@ -317,5 +317,3 @@ if __name__ == "__main__":
     print(f" Annette's Private Lessons Server Running on {host}:{port}")
     print("==================================================")
     uvicorn.run("server:app", host=host, port=port)
-server.py
-Displaying server.py.
