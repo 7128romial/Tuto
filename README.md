@@ -22,3 +22,15 @@ The teacher login comes from environment variables:
 On Render, set `TEACHER_PASSWORD` under the service's Environment tab.
 On Render, teacher sign-in stays disabled until `TEACHER_PASSWORD` is set.
 When you run the server on your own computer without `TEACHER_PASSWORD`, the password is `annette123`.
+
+## Database
+
+Without `DATABASE_URL`, the server saves data to a local `tutoring.db` file.
+Render's free plan erases that file on every deploy and restart, so the live site needs a hosted Postgres database.
+
+1. Create a free Postgres database at https://neon.tech (pick the Frankfurt region, close to the Render server).
+2. Copy its connection string. It starts with `postgresql://`.
+3. In the Render dashboard, open the service, go to Environment, and add `DATABASE_URL` with that connection string.
+4. Save. Render redeploys, and the server creates the tables on first start.
+
+Data in the old `tutoring.db` file is not moved. To keep it, download a backup from the Backup tab before you switch, then restore it after.

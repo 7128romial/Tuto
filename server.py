@@ -1,4 +1,5 @@
 
+import re
 import sqlite3
 import os
 import glob
@@ -125,7 +126,70 @@ def require_teacher(session: dict = Depends(get_session)):
         raise HTTPException(status_code=403, detail="Only the teacher can do this.")
     return session
 
+# Set DATABASE_URL to a Postgres connection string to keep data across deploys.
+# Without it, the server uses a local SQLite file (fine for running on your own computer).
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USE_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
+
+# Postgres lowercases unquoted names, so map result columns back to the names the page expects.
+CAMEL_COLUMNS = {name.lower(): name for name in [
+    "studentId", "studentName", "weekId", "startTime", "endTime", "inviteCode", "parentName", "parentPhone",
+    "studentPhone", "lessonId", "lessonSummary", "requestType", "dateSubmitted", "teacherReply",
+    "teacherReplyDate", "createdAt", "userId", "hasAccount",
+]}
+
+def camel_row_factory(cursor):
+    names = [CAMEL_COLUMNS.get(col.name, col.name) for col in (cursor.description or [])]
+    return lambda values: dict(zip(names, values))
+
+def to_postgres_sql(sql):
+    sql = sql.replace("?", "%s")
+    if sql.lstrip().upper().startswith("CREATE TABLE"):
+        sql = sql.replace(" REAL", " DOUBLE PRECISION")
+    match = re.search(r"INSERT OR REPLACE INTO (\w+) \(([^)]*)\)", sql)
+    if match:
+        columns = [c.strip() for c in match.group(2).split(",")]
+        updates = ", ".join(f"{c} = excluded.{c}" for c in columns if c != "id")
+        sql = sql.replace("INSERT OR REPLACE", "INSERT").rstrip().rstrip(";") + f" ON CONFLICT (id) DO UPDATE SET {updates}"
+    return sql
+
+class PostgresCursor:
+    def __init__(self, conn):
+        self._cur = conn.cursor(row_factory=camel_row_factory)
+
+    def execute(self, sql, params=()):
+        self._cur.execute(to_postgres_sql(sql), tuple(params))
+        return self
+
+    def fetchone(self):
+        return self._cur.fetchone()
+
+    def fetchall(self):
+        return self._cur.fetchall()
+
+class PostgresConnection:
+    """Gives a psycopg connection the small part of the sqlite3 API this server uses."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def cursor(self):
+        return PostgresCursor(self._conn)
+
+    def execute(self, sql, params=()):
+        return self.cursor().execute(sql, params)
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
 def get_db():
+    if USE_POSTGRES:
+        import psycopg
+        return PostgresConnection(psycopg.connect(DATABASE_URL, connect_timeout=10))
+
     candidates = [
         os.path.join(os.path.dirname(__file__), "tutoring.db"),
         "/tmp/tutoring.db",
@@ -164,15 +228,12 @@ def init_db():
     )
     """)
 
-    student_columns = [row[1] for row in cursor.execute("PRAGMA table_info(students)").fetchall()]
-    if 'inviteCode' not in student_columns:
-        cursor.execute("ALTER TABLE students ADD COLUMN inviteCode TEXT")
-    if 'parentName' not in student_columns:
-        cursor.execute("ALTER TABLE students ADD COLUMN parentName TEXT")
-    if 'parentPhone' not in student_columns:
-        cursor.execute("ALTER TABLE students ADD COLUMN parentPhone TEXT")
-    if 'studentPhone' not in student_columns:
-        cursor.execute("ALTER TABLE students ADD COLUMN studentPhone TEXT")
+    if not USE_POSTGRES:
+        # Add columns that older SQLite databases are missing.
+        student_columns = [row[1] for row in cursor.execute("PRAGMA table_info(students)").fetchall()]
+        for column in ["inviteCode", "parentName", "parentPhone", "studentPhone"]:
+            if column not in student_columns:
+                cursor.execute(f"ALTER TABLE students ADD COLUMN {column} TEXT")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS teachers (
@@ -180,7 +241,7 @@ def init_db():
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        createdAt TEXT
     )
     """)
     
