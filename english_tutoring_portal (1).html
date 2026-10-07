@@ -2123,7 +2123,7 @@
               </div>
               <div>
                 <span class="badge ${next.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}" style="font-size:0.85rem; padding:6px 14px;">
-                  ${next.payment === 'Paid' ? '✓ Lesson Fee Paid' : `⏳ Payment Due: $${next.rate}`}
+                  ${next.payment === 'Paid' ? '✓ Lesson Fee Paid' : `⏳ Payment Due: ₪${next.rate}`}
                 </span>
               </div>
             </div>
@@ -2181,7 +2181,7 @@
                 </div>
                 <div style="display:flex; gap:6px;">
                   <span class="badge ${l.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">
-                    ${l.payment === 'Paid' ? 'Paid' : `Pending: $${l.rate}`}
+                    ${l.payment === 'Paid' ? 'Paid' : `Pending: ₪${l.rate}`}
                   </span>
                   <span class="badge ${l.status === 'Completed' ? 'badge-paid' : (l.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">
                     ${l.status}
@@ -2324,9 +2324,9 @@
       document.getElementById('mTotalLessons').textContent = totalCount;
       document.getElementById('mCompletedSubtitle').textContent = `${completedCount} sessions completed`;
       document.getElementById('mPendingReqs').textContent = pendingCount;
-      document.getElementById('mTotalRevenue').textContent = `$${totalRev}`;
-      document.getElementById('mPaidSubtitle').textContent = `$${paidRev} collected (${pct}%)`;
-      document.getElementById('mUnpaidBalance').textContent = `$${totalRev - paidRev}`;
+      document.getElementById('mTotalRevenue').textContent = `₪${totalRev}`;
+      document.getElementById('mPaidSubtitle').textContent = `₪${paidRev} collected (${pct}%)`;
+      document.getElementById('mUnpaidBalance').textContent = `₪${totalRev - paidRev}`;
       document.getElementById('mUnpaidSessions').textContent = `${unpaidLessonsCount} unpaid lessons`;
 
       renderTeacherScheduleBoard(week);
@@ -2387,7 +2387,7 @@
                         ${l.startTime}–${l.endTime}
                       </span>
                       <span class="badge ${l.payment === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">
-                        ${l.payment === 'Paid' ? 'Paid' : `$${l.rate}`}
+                        ${l.payment === 'Paid' ? 'Paid' : `₪${l.rate}`}
                       </span>
                     </div>
 
@@ -2718,7 +2718,7 @@
               <div style="font-size:0.75rem; color:var(--slate-500);">${l.topic || 'Lesson'}</div>
             </td>
             <td>${l.day}, ${l.date} at ${l.startTime}</td>
-            <td><strong>$${l.rate}</strong></td>
+            <td><strong>₪${l.rate}</strong></td>
             <td><span class="badge ${l.status === 'Completed' ? 'badge-paid' : (l.status === 'Cancelled' ? 'badge-cancelled' : 'badge-confirmed')}">${l.status}</span></td>
             <td>
               <span class="badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}">
@@ -2768,7 +2768,7 @@
       if (type === 'reminder') {
         text = `Hi ${name}! This is Teacher Annette. Looking forward to our English lesson on ${lesson.day} (${lesson.date}) at ${lesson.startTime}. Please have your notebook ready!`;
       } else if (type === 'payment') {
-        text = `Hi ${name}! This is Teacher Annette. A gentle reminder regarding our lesson on ${lesson.day} (${lesson.date}) — fee is $${lesson.rate} (via ${lesson.method || 'Bit'}). Thank you!`;
+        text = `Hi ${name}! This is Teacher Annette. A gentle reminder regarding our lesson on ${lesson.day} (${lesson.date}) — fee is ₪${lesson.rate} (via ${lesson.method || 'Bit'}). Thank you!`;
       } else if (type === 'confirm') {
         text = `Hi ${name}! Your lesson for ${lesson.day} at ${lesson.startTime} is confirmed. See you soon! — Teacher Annette`;
       }
@@ -2837,7 +2837,7 @@
             <td><strong>${s.name}</strong></td>
             <td><span class="badge" style="background:#f1f5f9; color:var(--slate-700);">${s.grade}</span></td>
             <td>${s.phone || 'N/A'}</td>
-            <td><strong>$${s.rate}/hr</strong></td>
+            <td><strong>₪${s.rate}/hr</strong></td>
             <td style="font-size:0.8rem; color:var(--slate-500); max-width:220px;">${s.notes || '-'}</td>
             <td>
               <button class="wa-btn" onclick="openDirectStudentWa('${s.id}')">
