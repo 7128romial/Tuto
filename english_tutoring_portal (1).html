@@ -2833,7 +2833,15 @@
       document.getElementById('waComposerText').dataset.template = type;
       document.getElementById('waComposerText').value = text;
       const encoded = encodeURIComponent(text);
-      document.getElementById('waSendAnchor').href = phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+
+      if (!phone) {
+        document.getElementById('waSendAnchor').href = '#';
+        document.getElementById('waSendAnchor').setAttribute('onclick', "alert('No valid WhatsApp number was found for this contact. Please add a parent or student phone number first.'); return false;");
+        return;
+      }
+
+      document.getElementById('waSendAnchor').removeAttribute('onclick');
+      document.getElementById('waSendAnchor').href = `https://wa.me/${phone}?text=${encoded}`;
     }
 
     function updateWaRecipient() {
@@ -2949,8 +2957,13 @@
 
       const link = buildStudentInviteLink(student);
       const directPhone = normalizePhoneForWa(student.studentPhone || student.parentPhone || student.phone || student.wa || '');
+      if (!directPhone) {
+        alert('No valid WhatsApp number was found for this student. Please add a parent or student phone number first.');
+        return;
+      }
+
       const message = `Hi ${student.name}! Please use this link to sign up for your lessons: ${link}`;
-      const url = directPhone ? `https://wa.me/${directPhone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+      const url = `https://wa.me/${directPhone}?text=${encodeURIComponent(message)}`;
 
       persistData();
       window.open(url, '_blank');
