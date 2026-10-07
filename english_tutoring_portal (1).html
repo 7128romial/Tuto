@@ -1209,6 +1209,11 @@
               </div>
 
               <div class="form-group">
+                <label class="form-label">Student Phone (with country code):</label>
+                <input type="text" id="regStudentPhone" class="input-field" placeholder="E.g., +972 52-123-4567">
+              </div>
+
+              <div class="form-group">
                 <label class="form-label">Learning Goals / Notes:</label>
                 <textarea id="regStudentNotes" class="input-field" placeholder="E.g., Preparing for high school bagrut, grammar, conversation..."></textarea>
               </div>
@@ -1681,6 +1686,11 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label">Student Phone (with country code):</label>
+            <input type="text" id="modalStudentPhoneStudent" class="input-field" placeholder="E.g., +972 52-123-4567">
+          </div>
+
+          <div class="form-group">
             <label class="form-label">Learning Goals / Notes:</label>
             <textarea id="modalStudentNotes" class="input-field" placeholder="Targeting bagrut exam, grammar drills, etc."></textarea>
           </div>
@@ -1966,9 +1976,10 @@
       const pass = document.getElementById('regStudentPassword').value.trim();
       const parentName = document.getElementById('regParentName').value.trim();
       const parentPhone = document.getElementById('regParentPhone').value.trim();
+      const studentPhone = document.getElementById('regStudentPhone').value.trim();
       const notes = document.getElementById('regStudentNotes').value.trim();
       const inviteCode = new URLSearchParams(window.location.search).get('invite');
-      const phone = parentPhone || '';
+      const phone = parentPhone || studentPhone || '';
 
       if (!name || !parentName || !parentPhone || !pass) {
         alert('Please complete the student name, parent name, parent phone number, and password.');
@@ -1980,7 +1991,7 @@
 
       const matchedStudent = students.find(s => {
         const sName = (s.name || '').trim().toLowerCase();
-        const sPhone = (s.phone || '').replace(/\D/g, '');
+        const sPhone = ((s.studentPhone || s.phone || s.parentPhone || '')).replace(/\D/g, '');
         const normalizedPhone = cleanDigits.startsWith('972') ? cleanDigits : (cleanDigits.startsWith('0') ? '972' + cleanDigits.substring(1) : cleanDigits);
         const linkedByInvite = inviteCode && s.inviteCode === inviteCode;
         return linkedByInvite || (sName === name.toLowerCase() && sPhone === normalizedPhone);
@@ -1992,6 +2003,7 @@
         matchedStudent.notes = notes || matchedStudent.notes || '';
         matchedStudent.parentName = parentName || matchedStudent.parentName || '';
         matchedStudent.parentPhone = parentPhone || matchedStudent.parentPhone || matchedStudent.phone || '';
+        matchedStudent.studentPhone = studentPhone || matchedStudent.studentPhone || '';
         matchedStudent.wa = cleanDigits;
         matchedStudent.phone = parentPhone;
         matchedStudent.rate = Number(matchedStudent.rate) || 220;
@@ -2009,7 +2021,7 @@
           const res = await fetch(`${API_BASE}/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, grade, phone, parentName, parentPhone, notes, password: pass, inviteCode })
+            body: JSON.stringify({ name, grade, phone, parentName, parentPhone, studentPhone, notes, password: pass, inviteCode })
           });
           if (!res.ok) throw new Error('Registration failed');
           session = await res.json();
@@ -2021,7 +2033,7 @@
       } else {
         const newStudent = {
           id: 's_' + Date.now(),
-          name, grade: grade || 'Student', rate: 220, phone: parentPhone, parentName, parentPhone, wa: cleanDigits, notes, password: pass, inviteCode: inviteCode || undefined
+          name, grade: grade || 'Student', rate: 220, phone: parentPhone, parentName, parentPhone, studentPhone, wa: cleanDigits, notes, password: pass, inviteCode: inviteCode || undefined
         };
         students.push(newStudent);
         session = { role: 'student', studentId: newStudent.id, name: newStudent.name };
@@ -2781,7 +2793,7 @@
       if (!activeWaContext) return;
       const { lesson, student } = activeWaContext;
       const name = student ? student.name : 'Student';
-      const phone = student && student.wa ? student.wa : '';
+      const phone = student ? (student.studentPhone || student.parentPhone || student.phone || student.wa || '') : '';
 
       let text = '';
       if (type === 'reminder') {
@@ -2904,9 +2916,9 @@
       if (!student) return;
 
       const link = buildStudentInviteLink(student);
-      const phone = (student.wa || student.phone || '').replace(/\D/g, '');
+      const directPhone = (student.studentPhone || student.parentPhone || student.phone || student.wa || '').replace(/\D/g, '');
       const message = `Hi ${student.name}! Please use this link to sign up for your lessons: ${link}`;
-      const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
+      const url = directPhone ? `https://wa.me/${directPhone}?text=${encodeURIComponent(message)}` : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
       persistData();
       window.open(url, '_blank');
@@ -2926,6 +2938,7 @@
       document.getElementById('regStudentName').value = student.name || '';
       document.getElementById('regParentName').value = student.parentName || '';
       document.getElementById('regParentPhone').value = student.parentPhone || student.phone || '';
+      document.getElementById('regStudentPhone').value = student.studentPhone || '';
       document.getElementById('regStudentGrade').value = student.grade || '';
       document.getElementById('regStudentNotes').value = student.notes || '';
       document.getElementById('regStudentName').focus();
@@ -2950,7 +2963,12 @@
     function openDirectStudentWa(studentId) {
       const st = students.find(s => s.id === studentId);
       if (!st) return;
+      const directPhone = st.studentPhone || st.parentPhone || st.phone || st.wa || '';
       activeWaContext = { student: st, lesson: { day: 'our next lesson', date: '', startTime: '', rate: st.rate, method: 'Bit' } };
+      if (directPhone) {
+        const encoded = encodeURIComponent(document.getElementById('waComposerText').value || '');
+        document.getElementById('waSendAnchor').href = `https://wa.me/${directPhone.replace(/\D/g, '')}?text=${encoded}`;
+      }
       setWaTemplate('confirm');
       openModal('waModal');
     }
@@ -3220,6 +3238,7 @@
       document.getElementById('modalStudentRate').value = '220';
       document.getElementById('modalStudentParentName').value = '';
       document.getElementById('modalStudentPhone').value = '';
+      document.getElementById('modalStudentPhoneStudent').value = '';
       document.getElementById('modalStudentNotes').value = '';
       openModal('studentModal');
     }
@@ -3235,6 +3254,7 @@
       document.getElementById('modalStudentRate').value = s.rate;
       document.getElementById('modalStudentParentName').value = s.parentName || '';
       document.getElementById('modalStudentPhone').value = s.parentPhone || s.phone || '';
+      document.getElementById('modalStudentPhoneStudent').value = s.studentPhone || '';
       document.getElementById('modalStudentNotes').value = s.notes;
       openModal('studentModal');
     }
@@ -3244,6 +3264,7 @@
       const editId = document.getElementById('modalStudentId').value;
       const parentName = document.getElementById('modalStudentParentName').value.trim();
       const phoneRaw = document.getElementById('modalStudentPhone').value.trim();
+      const studentPhoneRaw = document.getElementById('modalStudentPhoneStudent').value.trim();
       let cleanDigits = phoneRaw.replace(/\D/g, '');
       if (cleanDigits.startsWith('0')) cleanDigits = '972' + cleanDigits.substring(1);
 
@@ -3254,6 +3275,7 @@
         rate: Number(document.getElementById('modalStudentRate').value) || 220,
         parentName,
         parentPhone: phoneRaw,
+        studentPhone: studentPhoneRaw,
         phone: phoneRaw,
         wa: cleanDigits,
         notes: document.getElementById('modalStudentNotes').value.trim(),

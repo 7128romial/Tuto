@@ -75,7 +75,8 @@ def init_db():
         password TEXT NOT NULL,
         inviteCode TEXT,
         parentName TEXT,
-        parentPhone TEXT
+        parentPhone TEXT,
+        studentPhone TEXT
     )
     """)
 
@@ -86,6 +87,8 @@ def init_db():
         cursor.execute("ALTER TABLE students ADD COLUMN parentName TEXT")
     if 'parentPhone' not in student_columns:
         cursor.execute("ALTER TABLE students ADD COLUMN parentPhone TEXT")
+    if 'studentPhone' not in student_columns:
+        cursor.execute("ALTER TABLE students ADD COLUMN studentPhone TEXT")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS teachers (
@@ -150,6 +153,7 @@ class SignUpPayload(BaseModel):
     phone: str
     parentName: Optional[str] = ""
     parentPhone: Optional[str] = ""
+    studentPhone: Optional[str] = ""
     notes: Optional[str] = ""
     password: str
     inviteCode: Optional[str] = ""
@@ -246,19 +250,20 @@ def signup(payload: SignUpPayload):
     conn = get_db()
     cursor = conn.cursor()
     parent_phone_value = (payload.parentPhone or payload.phone or "").strip()
+    student_phone_value = (payload.studentPhone or "").strip()
     clean_digits = "".join([c for c in parent_phone_value if c.isdigit()])
     if clean_digits.startswith("0"):
         clean_digits = "972" + clean_digits[1:]
 
     existing = cursor.execute(
-        "SELECT * FROM students WHERE LOWER(name) = ? AND (phone = ? OR wa = ?)",
-        (payload.name.strip().lower(), parent_phone_value, clean_digits)
+        "SELECT * FROM students WHERE LOWER(name) = ? AND (phone = ? OR wa = ? OR studentPhone = ?)",
+        (payload.name.strip().lower(), parent_phone_value, clean_digits, student_phone_value)
     ).fetchone()
 
     if existing:
         cursor.execute(
-            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ?, inviteCode = COALESCE(?, inviteCode), parentName = COALESCE(?, parentName), parentPhone = COALESCE(?, parentPhone) WHERE id = ?",
-            (payload.grade, parent_phone_value, clean_digits, payload.notes or '', payload.password, payload.inviteCode or existing["inviteCode"], payload.parentName or existing["parentName"], parent_phone_value or existing["parentPhone"], existing["id"])
+            "UPDATE students SET grade = ?, phone = ?, wa = ?, notes = ?, password = ?, inviteCode = COALESCE(?, inviteCode), parentName = COALESCE(?, parentName), parentPhone = COALESCE(?, parentPhone), studentPhone = COALESCE(?, studentPhone) WHERE id = ?",
+            (payload.grade, parent_phone_value, clean_digits, payload.notes or '', payload.password, payload.inviteCode or existing["inviteCode"], payload.parentName or existing["parentName"], parent_phone_value or existing["parentPhone"], student_phone_value or existing["studentPhone"], existing["id"])
         )
         conn.commit()
         conn.close()
@@ -266,9 +271,9 @@ def signup(payload: SignUpPayload):
 
     new_id = f"s_{int(time.time())}"
     cursor.execute("""
-    INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (new_id, payload.name, payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, payload.password, payload.inviteCode or "", payload.parentName or "", parent_phone_value))
+    INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone, studentPhone)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (new_id, payload.name, payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, payload.password, payload.inviteCode or "", payload.parentName or "", parent_phone_value, student_phone_value))
     conn.commit()
     conn.close()
     
@@ -278,7 +283,7 @@ def signup(payload: SignUpPayload):
 def list_students():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode, parentName, parentPhone FROM students ORDER BY name ASC")
+    cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode, parentName, parentPhone, studentPhone FROM students ORDER BY name ASC")
     items = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return items
