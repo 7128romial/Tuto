@@ -1712,12 +1712,19 @@
       </div>
       <div class="modal-body-content">
         <p style="font-size:0.85rem; color:var(--slate-500); margin-bottom:14px;">
-          Choose a message template or edit the text before sending to the parent:
+          Choose a message template or edit the text before sending to the parent or student:
         </p>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
           <span class="quick-chip" onclick="setWaTemplate('reminder')">📅 Lesson Reminder</span>
           <span class="quick-chip" onclick="setWaTemplate('payment')">💳 Payment Notice</span>
           <span class="quick-chip" onclick="setWaTemplate('confirm')">✓ Lesson Confirmed</span>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Send to:</label>
+          <select id="waRecipientSelect" class="input-field" onchange="updateWaRecipient()">
+            <option value="student">Student</option>
+            <option value="parent">Parent</option>
+          </select>
         </div>
         <div class="form-group">
           <textarea id="waComposerText" class="input-field" style="min-height:110px;"></textarea>
@@ -2789,12 +2796,21 @@
       openModal('waModal');
     }
 
+    function getWaContactPhone(student, senderType = 'student') {
+      if (!student) return '';
+      const sender = senderType === 'parent' ? 'parent' : 'student';
+      const preferred = sender === 'parent'
+        ? (student.parentPhone || student.phone || student.wa || student.studentPhone || '')
+        : (student.studentPhone || student.parentPhone || student.phone || student.wa || '');
+      return preferred.replace(/\D/g, '');
+    }
+
     function setWaTemplate(type) {
       if (!activeWaContext) return;
       const { lesson, student } = activeWaContext;
       const name = student ? student.name : 'Student';
-      const rawPhone = student ? (student.studentPhone || student.parentPhone || student.phone || student.wa || '') : '';
-      const phone = rawPhone.replace(/\D/g, '');
+      const senderType = document.getElementById('waRecipientSelect') ? document.getElementById('waRecipientSelect').value : 'student';
+      const phone = getWaContactPhone(student, senderType);
 
       let text = '';
       if (type === 'reminder') {
@@ -2805,9 +2821,15 @@
         text = `Hi ${name}! Your lesson for ${lesson.day} at ${lesson.startTime} is confirmed. See you soon! — Teacher Annette`;
       }
 
+      document.getElementById('waComposerText').dataset.template = type;
       document.getElementById('waComposerText').value = text;
       const encoded = encodeURIComponent(text);
       document.getElementById('waSendAnchor').href = phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+    }
+
+    function updateWaRecipient() {
+      const template = document.getElementById('waComposerText')?.dataset.template || 'confirm';
+      setWaTemplate(template);
     }
 
     function copyWaText() {
@@ -2965,6 +2987,10 @@
       const st = students.find(s => s.id === studentId);
       if (!st) return;
       activeWaContext = { student: st, lesson: { day: 'our next lesson', date: '', startTime: '', rate: st.rate, method: 'Bit' } };
+      const recipientSelect = document.getElementById('waRecipientSelect');
+      if (recipientSelect) {
+        recipientSelect.value = st.studentPhone ? 'student' : 'parent';
+      }
       setWaTemplate('confirm');
       openModal('waModal');
     }
