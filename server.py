@@ -50,7 +50,11 @@ def new_id(prefix):
 
 def phone_digits(value):
     digits = "".join(c for c in (value or "") if c.isdigit())
-    if digits.startswith("0"):
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("9720"):
+        digits = "972" + digits[4:]
+    elif digits.startswith("0"):
         digits = "972" + digits[1:]
     return digits
 
@@ -680,7 +684,17 @@ def list_students(session: dict = Depends(get_session)):
         only_own = " WHERE id = ?" if session["role"] == "student" else ""
         params = (session["userId"],) if only_own else ()
         cursor.execute("SELECT id, name, grade, rate, phone, wa, notes, inviteCode, parentName, parentPhone, studentPhone, CASE WHEN COALESCE(password, '') != '' THEN 1 ELSE 0 END AS hasAccount FROM students" + only_own + " ORDER BY name ASC", params)
-        return [dict(row) for row in cursor.fetchall()]
+        items = [dict(row) for row in cursor.fetchall()]
+        updated_any = False
+        for item in items:
+            if not item.get("hasAccount") and not item.get("inviteCode"):
+                code = f"inv_{secrets.token_urlsafe(12)}"
+                item["inviteCode"] = code
+                cursor.execute("UPDATE students SET inviteCode = ? WHERE id = ?", (code, item["id"]))
+                updated_any = True
+        if updated_any:
+            conn.commit()
+        return items
     finally:
         conn.close()
 
@@ -697,19 +711,21 @@ def save_student(payload: StudentPayload, session: dict = Depends(require_teache
                   payload.parentName or "", parent_phone_value, (payload.studentPhone or "").strip())
 
         if existing:
+            invite_code = payload.inviteCode or existing["inviteCode"] or ("" if existing["password"] else f"inv_{secrets.token_urlsafe(12)}")
             cursor.execute(
                 "UPDATE students SET name = ?, grade = ?, rate = ?, phone = ?, wa = ?, notes = ?, parentName = ?, parentPhone = ?, studentPhone = ?, inviteCode = ? WHERE id = ?",
-                values + (payload.inviteCode or existing["inviteCode"] or "", student_id)
+                values + (invite_code, student_id)
             )
             cursor.execute("UPDATE lessons SET studentName = ? WHERE studentId = ?", (payload.name.strip(), student_id))
             cursor.execute("UPDATE requests SET studentName = ? WHERE studentId = ?", (payload.name.strip(), student_id))
         else:
+            invite_code = payload.inviteCode or f"inv_{secrets.token_urlsafe(12)}"
             cursor.execute(
                 "INSERT INTO students (name, grade, rate, phone, wa, notes, parentName, parentPhone, studentPhone, inviteCode, id, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '')",
-                values + (payload.inviteCode or "", student_id)
+                values + (invite_code, student_id)
             )
         conn.commit()
-        return {"id": student_id, "status": "saved"}
+        return {"id": student_id, "inviteCode": invite_code, "status": "saved"}
     finally:
         conn.close()
 

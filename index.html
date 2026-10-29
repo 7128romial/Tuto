@@ -1748,8 +1748,8 @@
       </div>
       <div class="modal-bottom">
         <button type="button" class="btn btn-secondary" onclick="copyWaText()">Copy Text</button>
-        <a id="waSendAnchor" href="#" onclick="handleWaSendClick(event)" class="btn btn-primary" style="background:#25d366; border-color:#25d366;">
-          Open in WhatsApp App
+        <a id="waSendAnchor" href="#" target="_blank" rel="noopener" onclick="handleWaSendClick(event)" class="btn btn-primary" style="background:#25d366; border-color:#25d366;">
+          Open in WhatsApp
         </a>
       </div>
     </div>
@@ -2777,6 +2777,8 @@
       if (!value) return '';
       let digits = String(value).replace(/\D/g, '');
       if (!digits) return '';
+      if (digits.startsWith('00')) digits = digits.substring(2);
+      if (digits.startsWith('9720')) return '972' + digits.substring(4);
       if (digits.startsWith('972')) return digits;
       if (digits.startsWith('0')) return '972' + digits.substring(1);
       return digits;
@@ -2818,7 +2820,7 @@
 
       const anchor = document.getElementById('waSendAnchor');
       anchor.dataset.phone = phone;
-      anchor.href = phone ? `whatsapp://send?phone=${phone}&text=${encodeURIComponent(text)}` : '#';
+      anchor.href = phone ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}` : '#';
       document.getElementById('waPhoneHint').textContent = phone
         ? `Sending to +${phone}`
         : `No ${toParent ? 'parent' : 'student'} phone number saved. Edit the student profile to add one.`;
@@ -2831,9 +2833,9 @@
         alert('No WhatsApp number was found for this contact. Please add a parent or student phone number first.');
         return;
       }
-      // Use the text as edited in the box, not only the template, and launch the WhatsApp app directly.
+      // Use the text as edited in the box, not only the template.
       const text = document.getElementById('waComposerText').value;
-      anchor.href = `whatsapp://send?phone=${anchor.dataset.phone}&text=${encodeURIComponent(text)}`;
+      anchor.href = `https://api.whatsapp.com/send?phone=${anchor.dataset.phone}&text=${encodeURIComponent(text)}`;
     }
 
     function updateWaRecipient() {
@@ -2954,13 +2956,29 @@
         return;
       }
 
+      // If inviteCode is already present, open the universal WhatsApp link synchronously during the click
+      // gesture so the browser allows launching either the WhatsApp App or WhatsApp Web.
+      if (student.inviteCode) {
+        const base = window.location.origin + window.location.pathname;
+        const link = `${base}?invite=${encodeURIComponent(student.inviteCode)}`;
+        const message = `Hi ${student.name}! This is Teacher Annette. Please use this link to sign up for your lessons: ${link}`;
+        const url = `https://api.whatsapp.com/send?phone=${directPhone}&text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank', 'noopener');
+        triggerToast(`WhatsApp invite opened for ${student.name}`);
+        return url;
+      }
+
+      const win = window.open('', '_blank');
       const link = await buildStudentInviteLink(student);
-      if (!link) return;
+      if (!link) {
+        if (win) win.close();
+        return;
+      }
 
       const message = `Hi ${student.name}! This is Teacher Annette. Please use this link to sign up for your lessons: ${link}`;
-      const url = `whatsapp://send?phone=${directPhone}&text=${encodeURIComponent(message)}`;
-      window.location.href = url;
-      triggerToast(`Opening WhatsApp app for ${student.name}...`);
+      const url = `https://api.whatsapp.com/send?phone=${directPhone}&text=${encodeURIComponent(message)}`;
+      if (win) win.location.href = url; else window.location.href = url;
+      triggerToast(`WhatsApp invite opened for ${student.name}`);
       return url;
     }
 
@@ -3371,7 +3389,7 @@
         phone: phoneRaw,
         wa: normalizePhoneForWa(phoneRaw),
         notes: document.getElementById('modalStudentNotes').value.trim(),
-        inviteCode: existing ? (existing.inviteCode || '') : ''
+        inviteCode: (existing && existing.inviteCode) ? existing.inviteCode : `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
       };
 
       if (!data.name) {
