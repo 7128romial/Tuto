@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Annette Studio">
+  <meta name="theme-color" content="#ffffff">
   <title>Annette's Private Lessons</title>
   <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1072,6 +1076,101 @@
       transform: translateY(0);
       opacity: 1;
     }
+
+    /* ==============================================
+       iOS NATIVE APP DESIGN SYSTEM REFINEMENTS
+       ============================================== */
+    body {
+      background-color: #f2f4f8;
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .navbar {
+      background: rgba(255, 255, 255, 0.84);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .subnav {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    .content-panel,
+    .metric-card,
+    .next-appointment-hero,
+    .day-column {
+      border-radius: 18px;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .teacher-nav {
+      background: rgba(226, 232, 240, 0.65);
+      padding: 5px;
+      border-radius: 14px;
+      border: 1px solid rgba(203, 213, 225, 0.5);
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .teacher-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .t-tab-btn {
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+    }
+
+    .t-tab-btn.active {
+      background: #ffffff;
+      color: var(--slate-900);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .btn, .wa-btn, .action-icon-btn, .btn-circle {
+      border-radius: 11px;
+      transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn:active, .wa-btn:active, .action-icon-btn:active, .btn-circle:active {
+      transform: scale(0.97);
+    }
+
+    .modal-box {
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+    }
+
+    .msg-delete-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--slate-400);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .msg-delete-btn:hover {
+      background: var(--rose-50);
+      color: var(--rose-600);
+      border-color: #fecdd3;
+    }
   </style>
 </head>
 <body>
@@ -1121,16 +1220,13 @@
       </div>
 
       <!-- Action buttons visible in teacher view -->
-      <div id="teacherActionButtons" style="display: none; gap: 10px; flex-wrap: wrap;">
+      <div id="teacherActionButtons" style="display: none; gap: 8px; flex-wrap: wrap;">
         <button type="button" class="btn btn-sm" onclick="openInviteWaModal('')" style="background: #25d366; color: white; border-color: #25d366;">
-          &#x1F4AC; Invite Student on WhatsApp
-        </button>
-        <button class="btn btn-secondary btn-sm" onclick="copyGeneralInviteLink()">
-          &#x1F517; Copy Sign-Up Link
+          &#x1F4AC; Invite Student
         </button>
         <button class="btn btn-secondary btn-sm" onclick="duplicateCurrentWeek()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          Copy Week to Next
+          Copy Week
         </button>
         <button class="btn btn-primary btn-sm" onclick="openLessonModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
@@ -1341,8 +1437,11 @@
         <div class="panel-header">
           <div class="panel-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>
-            My Messages & Answers
+            My Messages &amp; Answers
           </div>
+          <button type="button" id="clearStudentMessagesBtn" class="btn btn-secondary btn-sm" style="display:none; color:var(--rose-600); border-color:#fecdd3;" onclick="clearMyMessages()">
+            &#x1F5D1;&#xFE0F; Clear All
+          </button>
         </div>
         <div id="studentRequestFeed">
           <!-- Strictly this student's private communication -->
@@ -1463,6 +1562,9 @@
                 New messages appear first. Answer, approve a new time, or cancel the lesson.
               </p>
             </div>
+            <button type="button" id="clearTeacherMessagesBtn" class="btn btn-secondary btn-sm" style="display:none; color:var(--slate-600);" onclick="clearResolvedTeacherMessages()">
+              &#x1F5D1;&#xFE0F; Clear Answered
+            </button>
           </div>
           <div id="teacherRequestsFeed">
             <!-- Populated -->
@@ -1517,16 +1619,10 @@
             <div>
               <div class="panel-title">Registered Students</div>
               <p style="font-size: 0.8rem; color: var(--slate-500); margin-top: 2px;">
-                Share the WhatsApp invite link so students can sign up on their own, or add them manually below.
+                Manage your student directory or add a student manually below.
               </p>
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" class="btn btn-sm" onclick="openInviteWaModal('')" style="background: #25d366; color: white; border-color: #25d366;">
-                &#x1F4AC; Invite Student on WhatsApp
-              </button>
-              <button class="btn btn-secondary btn-sm" onclick="copyGeneralInviteLink()">
-                &#x1F517; Copy Sign-Up Link
-              </button>
+            <div>
               <button class="btn btn-primary btn-sm" onclick="openStudentModal()">
                 + Add Student
               </button>
@@ -1777,17 +1873,12 @@
         <button type="button" class="btn btn-secondary btn-sm" onclick="copyWaText()">Copy Text</button>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <a id="waSendStudentBtn" href="#" target="_blank" rel="noopener" onclick="handleWaRoleSendClick(event, 'student')" class="btn btn-primary btn-sm" style="background:#25d366; border-color:#25d366;">
-            &#x1F4F2; Notify Student
+            &#x1F4F2; Send to Student
           </a>
           <a id="waSendParentBtn" href="#" target="_blank" rel="noopener" onclick="handleWaRoleSendClick(event, 'parent')" class="btn btn-primary btn-sm" style="background:#128c7e; border-color:#128c7e;">
-            &#x1F4F2; Notify Parent
+            &#x1F4F2; Send to Parent
           </a>
-          <a id="waSendPickerBtn" href="#" target="_blank" rel="noopener" onclick="handleWaPickerSendClick(event)" class="btn btn-secondary btn-sm" title="Open WhatsApp contact picker to choose any recipient">
-            &#x1F465; Choose Contact in WhatsApp
-          </a>
-          <a id="waSendAnchor" href="#" target="_blank" rel="noopener" onclick="handleWaSendClick(event)" class="btn btn-primary btn-sm" style="display:none; background:#25d366; border-color:#25d366;">
-            Open in WhatsApp
-          </a>
+          <a id="waSendAnchor" href="#" target="_blank" rel="noopener" onclick="handleWaSendClick(event)" class="btn btn-primary btn-sm" style="display:none;"></a>
         </div>
       </div>
     </div>
@@ -1851,6 +1942,7 @@
     let requests = (session && session.role === 'teacher' && Array.isArray(studioBackup.requests)) ? studioBackup.requests : [];
     let deletedStudentIds = new Set(Array.isArray(studioBackup.deletedStudentIds) ? studioBackup.deletedStudentIds : []);
     let deletedLessonIds = new Set(Array.isArray(studioBackup.deletedLessonIds) ? studioBackup.deletedLessonIds : []);
+    let deletedRequestIds = new Set(Array.isArray(studioBackup.deletedRequestIds) ? studioBackup.deletedRequestIds : []);
     let weekOffset = 0;
     let activeWaContext = null;
     let activeTeacherTab = 'schedule';
@@ -1920,7 +2012,7 @@
             const rqIds = new Set(rq.map(x => x.id));
             const missingStudents = (cached.students || []).filter(x => x.id && !stIds.has(x.id) && !deletedStudentIds.has(x.id));
             const missingLessons = (cached.lessons || []).filter(x => x.id && !lsIds.has(x.id) && !deletedLessonIds.has(x.id) && !deletedStudentIds.has(x.studentId));
-            const missingRequests = (cached.requests || []).filter(x => x.id && !rqIds.has(x.id) && !deletedStudentIds.has(x.studentId));
+            const missingRequests = (cached.requests || []).filter(x => x.id && !rqIds.has(x.id) && !deletedRequestIds.has(x.id) && !deletedStudentIds.has(x.studentId));
 
             if (missingStudents.length > 0 || missingLessons.length > 0 || missingRequests.length > 0) {
               const allStudentsForImport = [...st, ...missingStudents];
@@ -1980,7 +2072,8 @@
             lessons,
             requests,
             deletedStudentIds: [...deletedStudentIds],
-            deletedLessonIds: [...deletedLessonIds]
+            deletedLessonIds: [...deletedLessonIds],
+            deletedRequestIds: [...deletedRequestIds]
           }));
         }
       } catch (e) {
@@ -2604,9 +2697,11 @@
 
       const myRequests = requests.filter(r => r.studentId === student.id);
       const feed = document.getElementById('studentRequestFeed');
+      const clearBtn = document.getElementById('clearStudentMessagesBtn');
+      if (clearBtn) clearBtn.style.display = myRequests.length > 0 ? 'inline-flex' : 'none';
 
       if (myRequests.length === 0) {
-        feed.innerHTML = `<div style="text-align:center; padding:24px; color:var(--slate-400); font-size:0.88rem;">You haven't sent any messages yet.</div>`;
+        feed.innerHTML = `<div style="text-align:center; padding:28px 20px; color:var(--slate-400); font-size:0.88rem;">No messages or notifications. Your inbox is clean!</div>`;
       } else {
         feed.innerHTML = myRequests.map(r => `
           <div class="req-item-card ${r.status === 'Pending' ? 'pending' : 'resolved'}">
@@ -2615,7 +2710,12 @@
                 <span class="badge ${r.status === 'Pending' ? 'badge-unpaid' : 'badge-paid'}">${r.status === 'Pending' ? 'Waiting for answer' : 'Answered'}</span>
                 <strong style="margin-left: 8px; font-size: 0.92rem;">${esc(r.requestType)} · ${(() => { const l = r.lessonId ? lessons.find(x => x.id === r.lessonId) : null; return l ? `${formatDate(l.date)} at ${esc(l.startTime)}` : esc(r.lessonSummary || 'General'); })()}</strong>
               </div>
-              <span style="font-size: 0.75rem; color: var(--slate-400);">${new Date(r.dateSubmitted).toLocaleDateString()}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size: 0.75rem; color: var(--slate-400);">${new Date(r.dateSubmitted).toLocaleDateString()}</span>
+                <button type="button" class="msg-delete-btn" onclick="deleteMessageItem('${esc(r.id)}')" title="Remove this message">
+                  &times; Clear
+                </button>
+              </div>
             </div>
 
             <div class="chat-bubble-student">
@@ -2847,8 +2947,63 @@
       });
     }
 
+    async function deleteMessageItem(reqId) {
+      try {
+        await api('DELETE', `/requests/${encodeURIComponent(reqId)}`);
+      } catch (err) {
+        alert(`Could not remove message: ${err.message}`);
+        return;
+      }
+      deletedRequestIds.add(reqId);
+      requests = requests.filter(r => r.id !== reqId);
+      persistData();
+      refreshUI();
+      triggerToast('Message cleared.');
+    }
+
+    async function clearMyMessages() {
+      const myCount = requests.filter(r => session && r.studentId === session.studentId).length;
+      if (myCount === 0) return;
+      if (!confirm('Clear all your messages and answers?')) return;
+      try {
+        await api('DELETE', '/requests');
+      } catch (err) {
+        alert(`Could not clear messages: ${err.message}`);
+        return;
+      }
+      requests.forEach(r => {
+        if (!session || r.studentId === session.studentId) deletedRequestIds.add(r.id);
+      });
+      requests = requests.filter(r => session && r.studentId !== session.studentId);
+      dismissStudentScheduleAlert();
+      persistData();
+      refreshUI();
+      triggerToast('All messages and answers cleared.');
+    }
+
+    async function clearResolvedTeacherMessages() {
+      const resolved = requests.filter(r => r.status !== 'Pending');
+      if (resolved.length === 0) return;
+      if (!confirm(`Clear ${resolved.length} answered message(s)?`)) return;
+      try {
+        await api('DELETE', '/requests?onlyResolved=true');
+      } catch (err) {
+        alert(`Could not clear messages: ${err.message}`);
+        return;
+      }
+      resolved.forEach(r => deletedRequestIds.add(r.id));
+      requests = requests.filter(r => r.status === 'Pending');
+      persistData();
+      refreshUI();
+      triggerToast('Answered messages cleared.');
+    }
+
     function renderTeacherRequests() {
       const feed = document.getElementById('teacherRequestsFeed');
+      const clearBtn = document.getElementById('clearTeacherMessagesBtn');
+      const hasResolved = requests.some(r => r.status !== 'Pending');
+      if (clearBtn) clearBtn.style.display = hasResolved ? 'inline-flex' : 'none';
+
       if (requests.length === 0) {
         feed.innerHTML = `<div style="text-align:center; padding:40px; color:var(--slate-400);">No messages from students yet.</div>`;
         return;
@@ -2871,7 +3026,12 @@
                 <strong style="margin-left: 8px; font-size: 1rem;">${esc(r.studentName)}</strong>
                 <span style="font-size:0.85rem; color:var(--slate-500); margin-left:6px;">(${esc(r.requestType)})</span>
               </div>
-              <span style="font-size:0.75rem; color:var(--slate-400);">${new Date(r.dateSubmitted).toLocaleString()}</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.75rem; color:var(--slate-400);">${new Date(r.dateSubmitted).toLocaleString()}</span>
+                <button type="button" class="msg-delete-btn" onclick="deleteMessageItem('${rid}')" title="Delete this message">
+                  &times; Clear
+                </button>
+              </div>
             </div>
 
             <div style="font-size:0.85rem; margin-top:6px; color:var(--slate-600);">
@@ -3285,16 +3445,19 @@
             <td><strong>₪${esc(s.rate)}/hr</strong></td>
             <td style="font-size:0.8rem; color:var(--slate-500); max-width:220px;">${esc(s.notes || '-')}</td>
             <td>
-              <button class="wa-btn" onclick="openDirectStudentWa('${id}')">
-                💬 Message
-              </button>
+              ${joined ? `
+                <button class="wa-btn" onclick="openDirectStudentWa('${id}')">
+                  &#x1F4AC; Message
+                </button>
+              ` : `
+                <button class="wa-btn" onclick="sendStudentInviteWa('${id}')" title="Invite student on WhatsApp or copy their sign-up link">
+                  &#x1F4E8; Invite
+                </button>
+              `}
             </td>
             <td style="white-space:nowrap;">
-              ${joined ? '' : `
-              <button class="action-icon-btn" onclick="copyStudentInviteLink('${id}')" title="Copy a sign-up link for this student">🔗 Copy Invite</button>
-              <button class="wa-btn" onclick="sendStudentInviteWa('${id}')" style="margin-left:6px;" title="Send the sign-up link on WhatsApp">📨 Send Invite</button>`}
-              ${joined ? `<button class="action-icon-btn" onclick="resetStudentPassword('${id}')" title="Student forgot their password">Reset Password</button>` : ''}
-              <button class="action-icon-btn" onclick="editStudent('${id}')" style="margin-left:6px;">Edit</button>
+              <button class="action-icon-btn" onclick="editStudent('${id}')">Edit</button>
+              ${joined ? `<button class="action-icon-btn" onclick="resetStudentPassword('${id}')" style="margin-left:6px;" title="Student forgot their password">Reset Pass</button>` : ''}
               <button class="action-icon-btn" onclick="deleteStudent('${id}')" style="margin-left:6px; background:#fee2e2; color:#991b1b;">Delete</button>
             </td>
           </tr>

@@ -992,6 +992,37 @@ def reply_request(request_id: str, payload: ReplyPayload, session: dict = Depend
     finally:
         conn.close()
 
+@app.delete("/api/requests/{request_id}")
+def delete_request(request_id: str, session: dict = Depends(get_session)):
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        if session["role"] == "student":
+            cursor.execute("DELETE FROM requests WHERE id = ? AND studentId = ?", (request_id, session["userId"]))
+        else:
+            cursor.execute("DELETE FROM requests WHERE id = ?", (request_id,))
+        conn.commit()
+        return {"status": "deleted"}
+    finally:
+        conn.close()
+
+@app.delete("/api/requests")
+def clear_requests(onlyResolved: Optional[bool] = False, session: dict = Depends(get_session)):
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        if session["role"] == "student":
+            cursor.execute("DELETE FROM requests WHERE studentId = ?", (session["userId"],))
+        else:
+            if onlyResolved:
+                cursor.execute("DELETE FROM requests WHERE status != 'Pending'")
+            else:
+                cursor.execute("DELETE FROM requests")
+        conn.commit()
+        return {"status": "cleared"}
+    finally:
+        conn.close()
+
 @app.post("/api/backup/import")
 def import_backup(payload: BackupPayload, session: dict = Depends(require_teacher)):
     conn = get_db()
