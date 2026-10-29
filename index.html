@@ -1898,30 +1898,18 @@
             <option value="">&#x2728; New Student (General Sign-Up Link)</option>
           </select>
         </div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label" for="inviteWaPhoneInput">Student or Parent WhatsApp Number (Recommended):</label>
-          <input type="tel" id="inviteWaPhoneInput" class="input-field" placeholder="E.g., 052-123-4567" oninput="updateInviteWaLinks()">
-          <div style="font-size:0.76rem; color:var(--slate-500); margin-top:5px; line-height:1.4;">
-            &#x1F4A1; Entering the phone number opens that chat directly so WhatsApp does not ask for your <strong>Locked Chats secret code (&#x05E7;&#x05D5;&#x05D3; &#x05E1;&#x05D5;&#x05D3;&#x05D9;)</strong>. Or click <strong>Choose Contact in WhatsApp</strong> below to pick from your chat list.
-          </div>
-        </div>
         <div class="form-group" style="margin-bottom:4px;">
           <label class="form-label" for="inviteWaMessageText">Invite Message &amp; Sign-Up Link:</label>
-          <textarea id="inviteWaMessageText" class="input-field" style="min-height:95px;" oninput="updateInviteWaLinks()"></textarea>
+          <textarea id="inviteWaMessageText" class="input-field" style="min-height:105px;" oninput="updateInviteWaLinks()"></textarea>
         </div>
       </div>
-      <div class="modal-bottom" style="flex-wrap:wrap; justify-content:space-between; gap:8px;">
+      <div class="modal-bottom" style="flex-wrap:wrap; justify-content:space-between; gap:10px;">
         <button type="button" class="btn btn-secondary btn-sm" onclick="copyInviteWaModalText()">
           &#x1F517; Copy Message &amp; Link
         </button>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <a id="inviteWaPickerBtn" href="#" target="_blank" rel="noopener" onclick="handleInviteWaPickerClick(event)" class="btn btn-secondary btn-sm" title="Open WhatsApp contact picker and choose who to send the link to">
-            &#x1F465; Choose Contact in WhatsApp
-          </a>
-          <a id="inviteWaDirectBtn" href="#" target="_blank" rel="noopener" onclick="handleInviteWaDirectClick(event)" class="btn btn-primary btn-sm" style="background:#25d366; border-color:#25d366;">
-            &#x1F4F2; Send to Phone Number
-          </a>
-        </div>
+        <a id="inviteWaPickerBtn" href="#" target="_blank" rel="noopener" onclick="handleInviteWaPickerClick(event)" class="btn btn-primary btn-sm" style="background:#25d366; border-color:#25d366;">
+          &#x1F465; Choose Contact in WhatsApp
+        </a>
       </div>
     </div>
   </div>
@@ -3520,14 +3508,12 @@
     async function handleInviteWaStudentChange(forcedStudentId) {
       const select = document.getElementById('inviteWaStudentSelect');
       const studentId = forcedStudentId !== undefined ? forcedStudentId : (select ? select.value : '');
-      const phoneInput = document.getElementById('inviteWaPhoneInput');
       const msgInput = document.getElementById('inviteWaMessageText');
-      if (!phoneInput || !msgInput) return;
+      if (!msgInput) return;
 
       if (studentId) {
         const student = students.find(s => s.id === studentId);
         if (student) {
-          phoneInput.value = student.studentPhone || student.parentPhone || student.phone || '';
           const link = await buildStudentInviteLink(student);
           msgInput.value = `Hi ${student.name}! This is Teacher Annette \u{1F44B} Please use this link to sign up for your lessons: ${link || getGeneralSignupLink()}`;
           updateInviteWaLinks();
@@ -3535,30 +3521,18 @@
         }
       }
 
-      phoneInput.value = '';
       const link = getGeneralSignupLink();
       msgInput.value = `Hi! This is Teacher Annette \u{1F44B} Please use this link to sign up for your private English lessons: ${link}`;
       updateInviteWaLinks();
     }
 
     function updateInviteWaLinks() {
-      const phoneInput = document.getElementById('inviteWaPhoneInput');
       const msgInput = document.getElementById('inviteWaMessageText');
-      const directBtn = document.getElementById('inviteWaDirectBtn');
       const pickerBtn = document.getElementById('inviteWaPickerBtn');
-      if (!msgInput) return;
+      if (!msgInput || !pickerBtn) return;
 
       const message = msgInput.value.trim();
-      const normalizedPhone = normalizePhoneForWa(phoneInput ? phoneInput.value : '');
-
-      if (pickerBtn) {
-        pickerBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-      }
-      if (directBtn) {
-        directBtn.href = normalizedPhone
-          ? `https://api.whatsapp.com/send?phone=${normalizedPhone}&text=${encodeURIComponent(message)}`
-          : '#';
-      }
+      pickerBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
     }
 
     function handleInviteWaDirectClick(e) {
