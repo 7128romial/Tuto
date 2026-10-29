@@ -1,3 +1,10 @@
+databases:
+  - name: annettes-tutoring-db
+    databaseName: tutoring_db
+    user: tutoring_user
+    plan: free
+    region: frankfurt
+
 services:
   - type: web
     name: annettes-private-lessons
@@ -14,4 +21,6 @@ services:
       - key: TEACHER_PASSWORD
         sync: false
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: annettes-tutoring-db
+          property: connectionString

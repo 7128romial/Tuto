@@ -1733,6 +1733,30 @@
       <!-- Tab Content 5: Settings & Backup -->
       <div id="tTabBackup" style="display: none;">
         <div class="content-panel" style="max-width: 600px; margin-bottom: 20px;">
+          <div class="panel-header" style="margin-bottom: 12px;">
+            <div class="panel-title">&#x1F5C4;&#xFE0F; Database &amp; Saved Credentials</div>
+            <span class="badge badge-paid" id="dbEngineBadge">Connected</span>
+          </div>
+          <p style="font-size: 0.84rem; color: var(--slate-600); margin-bottom: 14px;">
+            All usernames, encrypted passwords, students, lessons, and messages are stored in your database (`user_credentials`, `teachers`, `students`, `lessons`, and `requests`).
+          </p>
+          <div class="appointment-meta-grid" style="margin-top: 8px; padding-top: 12px;">
+            <div class="meta-box">
+              <span class="meta-label">Saved Logins</span>
+              <span class="meta-value" id="dbCountCreds">-</span>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">Students</span>
+              <span class="meta-value" id="dbCountStudents">-</span>
+            </div>
+            <div class="meta-box">
+              <span class="meta-label">Lessons</span>
+              <span class="meta-value" id="dbCountLessons">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-panel" style="max-width: 600px; margin-bottom: 20px;">
           <div class="panel-title" style="margin-bottom: 12px;">🔒 Change Password</div>
           <form onsubmit="handleChangePassword(event)">
             <input type="text" autocomplete="username" style="display: none;" aria-hidden="true">
@@ -2894,6 +2918,27 @@
       if (activeTeacherTab === 'requests') renderTeacherRequests();
       if (activeTeacherTab === 'payments') renderPaymentLedger();
       if (activeTeacherTab === 'roster') renderStudentRoster();
+      if (activeTeacherTab === 'backup') refreshDbStatusPanel();
+    }
+
+    async function refreshDbStatusPanel() {
+      if (!session || session.role !== 'teacher' || !isBackendActive) return;
+      try {
+        const st = await api('GET', '/db/status');
+        const badge = document.getElementById('dbEngineBadge');
+        if (badge) {
+          badge.textContent = st.engine || 'Connected';
+          badge.className = `badge ${st.persistent ? 'badge-paid' : 'badge-confirmed'}`;
+        }
+        if (st.counts) {
+          const cEl = document.getElementById('dbCountCreds');
+          const sEl = document.getElementById('dbCountStudents');
+          const lEl = document.getElementById('dbCountLessons');
+          if (cEl) cEl.textContent = `${st.counts.credentials} account(s)`;
+          if (sEl) sEl.textContent = `${st.counts.students} student(s)`;
+          if (lEl) lEl.textContent = `${st.counts.lessons} lesson(s)`;
+        }
+      } catch (e) {}
     }
 
     function handleScheduleFilterChange() {

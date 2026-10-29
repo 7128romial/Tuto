@@ -254,7 +254,7 @@ USE_POSTGRES = DATABASE_URL.startswith(("postgres://", "postgresql://"))
 CAMEL_COLUMNS = {name.lower(): name for name in [
     "studentId", "studentName", "weekId", "startTime", "endTime", "inviteCode", "parentName", "parentPhone",
     "studentPhone", "lessonId", "lessonSummary", "requestType", "dateSubmitted", "teacherReply",
-    "teacherReplyDate", "createdAt", "userId", "hasAccount", "envPasswordMark",
+    "teacherReplyDate", "createdAt", "userId", "hasAccount", "envPasswordMark", "passwordHash", "updatedAt",
 ]}
 
 def camel_row_factory(cursor):
@@ -267,9 +267,11 @@ def to_postgres_sql(sql):
         sql = sql.replace(" REAL", " DOUBLE PRECISION")
     match = re.search(r"INSERT OR REPLACE INTO (\w+) \(([^)]*)\)", sql)
     if match:
+        table_name = match.group(1).strip().lower()
+        pk_col = "token" if table_name == "sessions" else "id"
         columns = [c.strip() for c in match.group(2).split(",")]
-        updates = ", ".join(f"{c} = excluded.{c}" for c in columns if c != "id")
-        sql = sql.replace("INSERT OR REPLACE", "INSERT").rstrip().rstrip(";") + f" ON CONFLICT (id) DO UPDATE SET {updates}"
+        updates = ", ".join(f"{c} = excluded.{c}" for c in columns if c != pk_col)
+        sql = sql.replace("INSERT OR REPLACE", "INSERT").rstrip().rstrip(";") + f" ON CONFLICT ({pk_col}) DO UPDATE SET {updates}"
     return sql
 
 class PostgresCursor:
@@ -418,6 +420,18 @@ def init_db():
         )
         """)
 
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_credentials (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            phone TEXT,
+            role TEXT NOT NULL,
+            userId TEXT NOT NULL,
+            passwordHash TEXT NOT NULL,
+            updatedAt TEXT NOT NULL
+        )
+        """)
+
         # envPasswordMark remembers which TEACHER_PASSWORD was last applied. A password changed
         # in the app survives restarts, while a new TEACHER_PASSWORD value still overrides it
         # (the way to recover a forgotten password).
@@ -446,9 +460,36 @@ def init_db():
             cursor.execute("INSERT INTO teachers (id, name, email, password) VALUES ('t_annette', ?, ?, ?)",
                            (TEACHER_NAME, TEACHER_USERNAME, hash_password("annette123")))
 
+        # Sync all existing teacher and student accounts with passwords into user_credentials
+        now_iso = utc_now_iso()
+        for t_row in cursor.execute("SELECT id, name, email, password FROM teachers").fetchall():
+            if t_row["password"]:
+                cursor.execute("""
+                INSERT OR REPLACE INTO user_credentials (id, username, phone, role, userId, passwordHash, updatedAt)
+                VALUES (?, ?, ?, 'teacher', ?, ?, ?)
+                """, (f"cred_teacher_{t_row['id']}", (t_row["email"] or t_row["name"] or "annette").strip(), "", t_row["id"], t_row["password"], now_iso))
+
+        for s_row in cursor.execute("SELECT id, name, phone, parentPhone, studentPhone, password FROM students").fetchall():
+            if s_row["password"]:
+                s_phone = (s_row["studentPhone"] or s_row["parentPhone"] or s_row["phone"] or "").strip()
+                cursor.execute("""
+                INSERT OR REPLACE INTO user_credentials (id, username, phone, role, userId, passwordHash, updatedAt)
+                VALUES (?, ?, ?, 'student', ?, ?, ?)
+                """, (f"cred_student_{s_row['id']}", (s_row["name"] or "").strip(), s_phone, s_row["id"], s_row["password"], now_iso))
+
         conn.commit()
     finally:
         conn.close()
+
+def sync_user_credential(cursor, role: str, user_id: str, username: str, phone: str, password_hash: str):
+    cred_id = f"cred_{role}_{user_id}"
+    if not password_hash:
+        cursor.execute("DELETE FROM user_credentials WHERE id = ?", (cred_id,))
+        return
+    cursor.execute("""
+    INSERT OR REPLACE INTO user_credentials (id, username, phone, role, userId, passwordHash, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (cred_id, (username or "").strip(), (phone or "").strip(), role, user_id, password_hash, utc_now_iso()))
 
 init_db()
 
@@ -541,7 +582,34 @@ def serve_portal():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "app": "Annette's Private Lessons Backend"}
+    return {
+        "status": "ok",
+        "app": "Annette's Private Lessons Backend",
+        "dbEngine": "postgresql" if USE_POSTGRES else "sqlite",
+        "persistentDb": bool(USE_POSTGRES),
+    }
+
+@app.get("/api/db/status")
+def db_status(session: dict = Depends(require_teacher)):
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cred_count = cursor.execute("SELECT COUNT(*) AS cnt FROM user_credentials").fetchone()["cnt"]
+        stu_count = cursor.execute("SELECT COUNT(*) AS cnt FROM students").fetchone()["cnt"]
+        les_count = cursor.execute("SELECT COUNT(*) AS cnt FROM lessons").fetchone()["cnt"]
+        req_count = cursor.execute("SELECT COUNT(*) AS cnt FROM requests").fetchone()["cnt"]
+        return {
+            "engine": "PostgreSQL (Render Cloud DB)" if USE_POSTGRES else "SQLite (Local File)",
+            "persistent": bool(USE_POSTGRES),
+            "counts": {
+                "credentials": cred_count,
+                "students": stu_count,
+                "lessons": les_count,
+                "requests": req_count,
+            },
+        }
+    finally:
+        conn.close()
 
 @app.post("/api/auth/login")
 def login(payload: LoginPayload):
@@ -632,7 +700,9 @@ def change_password(payload: ChangePasswordPayload, session: dict = Depends(get_
         if not row or not verify_password(row["password"], payload.currentPassword)[0]:
             raise HTTPException(status_code=400, detail="Your current password is incorrect.")
 
-        cursor.execute(f"UPDATE {table} SET password = ? WHERE id = ?", (hash_password(payload.newPassword), session["userId"]))
+        new_hash = hash_password(payload.newPassword)
+        cursor.execute(f"UPDATE {table} SET password = ? WHERE id = ?", (new_hash, session["userId"]))
+        sync_user_credential(cursor, session["role"], session["userId"], session.get("name") or session["userId"], "", new_hash)
         # Sign out every other device that used the old password.
         current_token = session.get("token") or (token_key(authorization[7:].strip()) if authorization else "")
         cursor.execute("DELETE FROM sessions WHERE role = ? AND userId = ? AND token != ?", (session["role"], session["userId"], current_token))
@@ -704,6 +774,8 @@ def signup(payload: SignUpPayload):
             if updated_name != existing["name"]:
                 cursor.execute("UPDATE lessons SET studentName = ? WHERE studentId = ?", (updated_name, existing["id"]))
                 cursor.execute("UPDATE requests SET studentName = ? WHERE studentId = ?", (updated_name, existing["id"]))
+            pw_row = cursor.execute("SELECT password FROM students WHERE id = ?", (existing["id"],)).fetchone()
+            sync_user_credential(cursor, "student", existing["id"], updated_name, student_phone_value or parent_phone_value, pw_row["password"] if pw_row else "")
             token = create_session(cursor, "student", existing["id"], updated_name)
             conn.commit()
             return {"role": "student", "studentId": existing["id"], "name": updated_name, "token": token}
@@ -713,10 +785,12 @@ def signup(payload: SignUpPayload):
             student_id = requested_id
         else:
             student_id = new_id("s")
+        pw_hash = hash_password(payload.password)
         cursor.execute("""
         INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone, studentPhone)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?)
-        """, (student_id, clean_name, payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, hash_password(payload.password), payload.parentName or "", parent_phone_value, student_phone_value))
+        """, (student_id, clean_name, payload.grade, 220.0, parent_phone_value, clean_digits, payload.notes, pw_hash, payload.parentName or "", parent_phone_value, student_phone_value))
+        sync_user_credential(cursor, "student", student_id, clean_name, student_phone_value or parent_phone_value, pw_hash)
         token = create_session(cursor, "student", student_id, clean_name)
         conn.commit()
 
@@ -782,6 +856,7 @@ def delete_student(student_id: str, session: dict = Depends(require_teacher)):
     conn = get_db()
     try:
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM user_credentials WHERE role = 'student' AND userId = ?", (student_id,))
         cursor.execute("DELETE FROM sessions WHERE role = 'student' AND userId = ?", (student_id,))
         cursor.execute("DELETE FROM requests WHERE studentId = ?", (student_id,))
         cursor.execute("DELETE FROM lessons WHERE studentId = ?", (student_id,))
@@ -801,6 +876,7 @@ def reset_student_password(student_id: str, session: dict = Depends(require_teac
             raise HTTPException(status_code=404, detail="Student not found.")
         invite_code = f"inv_{secrets.token_urlsafe(12)}"
         cursor.execute("UPDATE students SET password = '', inviteCode = ? WHERE id = ?", (invite_code, student_id))
+        cursor.execute("DELETE FROM user_credentials WHERE role = 'student' AND userId = ?", (student_id,))
         cursor.execute("DELETE FROM sessions WHERE role = 'student' AND userId = ?", (student_id,))
         conn.commit()
         return {"status": "reset", "inviteCode": invite_code}
@@ -1035,6 +1111,7 @@ def import_backup(payload: BackupPayload, session: dict = Depends(require_teache
                 s_rate = float(s["rate"]) if s.get("rate") not in (None, "") else 220.0
             except (TypeError, ValueError):
                 s_rate = 220.0
+            pw_hashed = ensure_hashed(s.get("password") or "")
             cursor.execute("""
             INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone, studentPhone)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1043,8 +1120,10 @@ def import_backup(payload: BackupPayload, session: dict = Depends(require_teache
                 parentPhone = excluded.parentPhone, studentPhone = excluded.studentPhone,
                 password = COALESCE(NULLIF(excluded.password, ''), students.password)
             """, (s["id"], s["name"], s.get("grade") or "", s_rate, s.get("phone") or "", s.get("wa") or "",
-                  s.get("notes") or "", ensure_hashed(s.get("password") or ""), s.get("inviteCode") or "", s.get("parentName") or "",
+                  s.get("notes") or "", pw_hashed, s.get("inviteCode") or "", s.get("parentName") or "",
                   s.get("parentPhone") or "", s.get("studentPhone") or ""))
+            if pw_hashed:
+                sync_user_credential(cursor, "student", s["id"], s["name"], s.get("studentPhone") or s.get("parentPhone") or s.get("phone") or "", pw_hashed)
 
         known_students = {row["id"] for row in cursor.execute("SELECT id FROM students").fetchall()}
 
