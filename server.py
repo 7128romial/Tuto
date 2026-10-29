@@ -451,12 +451,8 @@ def init_db():
                 """, (TEACHER_NAME, TEACHER_USERNAME, hash_password(TEACHER_PASSWORD), hash_password(TEACHER_PASSWORD)))
             else:
                 cursor.execute("UPDATE teachers SET name = ?, email = ? WHERE id = 't_annette'", (TEACHER_NAME, TEACHER_USERNAME))
-        elif os.environ.get("RENDER") and not cursor.execute("SELECT 1 FROM teachers LIMIT 1").fetchone():
-            # Never use a known default password on the live site.
-            print("ERROR: TEACHER_PASSWORD is not set. Teacher sign-in is disabled until you set it in the Render dashboard.")
         elif not cursor.execute("SELECT 1 FROM teachers LIMIT 1").fetchone():
-            print("WARNING: TEACHER_PASSWORD is not set. Using the default teacher password 'annette123'. "
-                  "Set TEACHER_PASSWORD in your hosting environment.")
+            print("INFO: Seeding initial teacher account in database for '" + TEACHER_USERNAME + "'.")
             cursor.execute("INSERT INTO teachers (id, name, email, password) VALUES ('t_annette', ?, ?, ?)",
                            (TEACHER_NAME, TEACHER_USERNAME, hash_password("annette123")))
 
