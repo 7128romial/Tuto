@@ -1166,16 +1166,20 @@
           
           <!-- Unified Sign In -->
           <div id="paneStudentLogin">
-            <form onsubmit="handleStudentSignIn(event)">
+            <form onsubmit="handleStudentSignIn(event)" autocomplete="on">
               <div class="form-group">
                 <label class="form-label" for="studentLoginIdentifier">Name or Phone Number:</label>
-                <input type="text" id="studentLoginIdentifier" class="input-field" placeholder="E.g., Maya Ronen or 054-123-4567" autocomplete="username" required>
+                <input type="text" id="studentLoginIdentifier" name="username" class="input-field" placeholder="E.g., Maya Ronen or 054-123-4567" autocomplete="username" required>
               </div>
               <div class="form-group">
                 <label class="form-label" for="studentPassInput">Password:</label>
-                <input type="password" id="studentPassInput" class="input-field" placeholder="Your password" autocomplete="current-password" required>
+                <input type="password" id="studentPassInput" name="password" class="input-field" placeholder="Your password" autocomplete="current-password" required>
               </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <input type="checkbox" id="rememberLoginCheck" checked style="width:16px; height:16px; accent-color:var(--primary); cursor:pointer;">
+                <label for="rememberLoginCheck" style="font-size:0.82rem; color:var(--slate-600); cursor:pointer;">Remember my username &amp; password for next time</label>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 4px;">
                 Sign In
               </button>
               <div style="text-align: center; margin-top: 14px;">
@@ -1189,45 +1193,50 @@
 
           <!-- Unified Sign Up -->
           <div id="paneStudentRegister" style="display: none;">
-            <form onsubmit="handleStudentSignUp(event)">
+            <form onsubmit="handleStudentSignUp(event)" autocomplete="on">
               <div class="form-group">
-                <label class="form-label">Full Name:</label>
-                <input type="text" id="regStudentName" class="input-field" placeholder="E.g., Maya Ronen" required>
+                <label class="form-label" for="regStudentName">Full Name:</label>
+                <input type="text" id="regStudentName" name="username" class="input-field" placeholder="E.g., Maya Ronen" autocomplete="username" required>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
-                  <label class="form-label">Grade / Level:</label>
+                  <label class="form-label" for="regStudentGrade">Grade / Level:</label>
                   <input type="text" id="regStudentGrade" class="input-field" placeholder="E.g., 9th Grade / 5-Units" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Create Password:</label>
-                  <input type="password" id="regStudentPassword" class="input-field" placeholder="Min. 4 characters" minlength="4" autocomplete="new-password" required>
+                  <label class="form-label" for="regStudentPassword">Create Password:</label>
+                  <input type="password" id="regStudentPassword" name="password" class="input-field" placeholder="Min. 4 characters" minlength="4" autocomplete="new-password" required>
                 </div>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
-                  <label class="form-label">Parent Name:</label>
+                  <label class="form-label" for="regParentName">Parent Name:</label>
                   <input type="text" id="regParentName" class="input-field" placeholder="E.g., Dana Levi" required>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Parent Phone:</label>
-                  <input type="tel" id="regParentPhone" class="input-field" placeholder="E.g., 054-123-4567" required>
+                  <label class="form-label" for="regParentPhone">Parent Phone:</label>
+                  <input type="tel" id="regParentPhone" class="input-field" placeholder="E.g., 054-123-4567" autocomplete="tel" required>
                 </div>
               </div>
 
               <div class="form-group">
-                <label class="form-label">Student Phone (optional):</label>
-                <input type="tel" id="regStudentPhone" class="input-field" placeholder="E.g., 052-123-4567">
+                <label class="form-label" for="regStudentPhone">Student Phone (optional):</label>
+                <input type="tel" id="regStudentPhone" class="input-field" placeholder="E.g., 052-123-4567" autocomplete="tel">
               </div>
 
               <div class="form-group">
-                <label class="form-label">Learning Goals / Notes:</label>
+                <label class="form-label" for="regStudentNotes">Learning Goals / Notes:</label>
                 <textarea id="regStudentNotes" class="input-field" placeholder="E.g., Preparing for high school bagrut, grammar, conversation..."></textarea>
               </div>
 
-              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <input type="checkbox" id="rememberSignUpCheck" checked style="width:16px; height:16px; accent-color:var(--primary); cursor:pointer;">
+                <label for="rememberSignUpCheck" style="font-size:0.82rem; color:var(--slate-600); cursor:pointer;">Save my username &amp; password for next time</label>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 4px;">
                 Create Account
               </button>
               <div style="text-align: center; margin-top: 14px;">
@@ -1885,6 +1894,26 @@
         }
 
         if (session.role === 'student') {
+          if (st.length === 0) {
+            const savedProfile = findSavedStudentAccount(session.name || session.studentId);
+            if (savedProfile && savedProfile.password) {
+              try {
+                const restored = await api('POST', '/auth/signup', {
+                  id: session.studentId || savedProfile.id,
+                  name: savedProfile.name,
+                  grade: savedProfile.grade || '',
+                  phone: savedProfile.parentPhone || savedProfile.phone || '',
+                  parentName: savedProfile.parentName || '',
+                  parentPhone: savedProfile.parentPhone || savedProfile.phone || '',
+                  studentPhone: savedProfile.studentPhone || '',
+                  notes: savedProfile.notes || '',
+                  password: savedProfile.password
+                });
+                session = { ...restored, token: restored.token || session.token };
+                st = await api('GET', '/students');
+              } catch (e) {}
+            }
+          }
           checkNewStudentNotifications(ls, rq);
         }
         students = st;
@@ -2085,6 +2114,48 @@
       refreshUI();
     }
 
+    function saveCredentialsForNextTime(username, password, studentProfile = null) {
+      try {
+        localStorage.setItem('annette_saved_login', JSON.stringify({ username, password }));
+        if (studentProfile && studentProfile.name) {
+          const accounts = loadStored('annette_saved_accounts', []);
+          const normPhone = normalizePhoneForWa(studentProfile.parentPhone || studentProfile.phone || '');
+          const normStuPhone = normalizePhoneForWa(studentProfile.studentPhone || '');
+          const filtered = accounts.filter(a =>
+            a.id !== studentProfile.id &&
+            (a.name || '').toLowerCase() !== studentProfile.name.toLowerCase()
+          );
+          filtered.push({ ...studentProfile, normPhone, normStuPhone });
+          localStorage.setItem('annette_saved_accounts', JSON.stringify(filtered));
+        }
+        if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
+          const cred = new window.PasswordCredential({ id: username, password, name: username });
+          navigator.credentials.store(cred).catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function findSavedStudentAccount(identifier) {
+      if (!identifier) return null;
+      const clean = identifier.trim().toLowerCase();
+      const digits = normalizePhoneForWa(identifier);
+      const accounts = loadStored('annette_saved_accounts', []);
+      return accounts.find(a =>
+        a.id === identifier ||
+        (a.name || '').trim().toLowerCase() === clean ||
+        (digits && (a.normPhone === digits || a.normStuPhone === digits))
+      ) || null;
+    }
+
+    function prefillSavedLogin() {
+      const saved = loadStored('annette_saved_login', null);
+      if (!saved) return;
+      const idInput = document.getElementById('studentLoginIdentifier');
+      const passInput = document.getElementById('studentPassInput');
+      if (idInput && !idInput.value && saved.username) idInput.value = saved.username;
+      if (passInput && !passInput.value && saved.password) passInput.value = saved.password;
+    }
+
     /* Auth Tab switcher */
     function switchAuthTab(tab) {
       document.getElementById('tabBtnStudentLogin').classList.toggle('active', tab === 'studentLogin');
@@ -2092,14 +2163,14 @@
 
       document.getElementById('paneStudentLogin').style.display = (tab === 'studentLogin') ? 'block' : 'none';
       document.getElementById('paneStudentRegister').style.display = (tab === 'studentRegister') ? 'block' : 'none';
+      if (tab === 'studentLogin') prefillSavedLogin();
     }
-
-
 
     async function handleStudentSignIn(e) {
       e.preventDefault();
       const identifier = document.getElementById('studentLoginIdentifier').value.trim();
       const pass = document.getElementById('studentPassInput').value.trim();
+      const remember = document.getElementById('rememberLoginCheck')?.checked !== false;
 
       if (!identifier || !pass) {
         alert('Please enter your name or phone number and your password.');
@@ -2109,11 +2180,38 @@
       try {
         session = await api('POST', '/auth/login', { usernameOrId: identifier, password: pass });
       } catch (err) {
-        alert(err.message);
-        return;
+        // If the hosting container restarted and wiped its local database file, automatically restore
+        // the student's saved account if the username and password match what was saved at sign-up.
+        const savedAcc = findSavedStudentAccount(identifier);
+        if (savedAcc && savedAcc.password === pass) {
+          try {
+            session = await api('POST', '/auth/signup', {
+              id: savedAcc.id,
+              name: savedAcc.name,
+              grade: savedAcc.grade || '',
+              phone: savedAcc.parentPhone || savedAcc.phone || '',
+              parentName: savedAcc.parentName || '',
+              parentPhone: savedAcc.parentPhone || savedAcc.phone || '',
+              studentPhone: savedAcc.studentPhone || '',
+              notes: savedAcc.notes || '',
+              password: pass
+            });
+          } catch (restoreErr) {
+            alert(err.message);
+            return;
+          }
+        } else {
+          alert(err.message);
+          return;
+        }
       }
 
-      document.getElementById('studentPassInput').value = '';
+      if (remember) {
+        saveCredentialsForNextTime(identifier, pass);
+      } else {
+        try { localStorage.removeItem('annette_saved_login'); } catch (e) {}
+      }
+
       persistData();
       triggerToast(session.role === 'teacher' ? `Signed in as Teacher ${session.name}` : `Welcome back, ${session.name}!`);
       refreshUI();
@@ -2129,6 +2227,7 @@
       const parentPhone = document.getElementById('regParentPhone').value.trim();
       const studentPhone = document.getElementById('regStudentPhone').value.trim();
       const notes = document.getElementById('regStudentNotes').value.trim();
+      const remember = document.getElementById('rememberSignUpCheck')?.checked !== false;
       const inviteCode = new URLSearchParams(window.location.search).get('invite') || '';
 
       if (!name || !parentName || !parentPhone || !pass) {
@@ -2147,10 +2246,23 @@
         return;
       }
 
+      if (remember) {
+        saveCredentialsForNextTime(name, pass, {
+          id: session.studentId,
+          name,
+          grade,
+          phone: parentPhone,
+          parentName,
+          parentPhone,
+          studentPhone,
+          notes,
+          password: pass
+        });
+      }
+
       if (inviteCode) window.history.replaceState({}, '', window.location.pathname);
-      document.getElementById('regStudentPassword').value = '';
       persistData();
-      triggerToast(`Welcome, ${session.name}! Your account is ready.`);
+      triggerToast(`Welcome, ${session.name}! Your username and password are saved for next time.`);
       refreshUI();
       await loadFromBackend();
     }
@@ -2200,6 +2312,7 @@
         subnavBar.style.display = 'none';
         userPill.style.display = 'none';
         signOutBtn.style.display = 'none';
+        prefillSavedLogin();
         return;
       }
 

@@ -458,6 +458,7 @@ class LoginPayload(BaseModel):
     password: str
 
 class SignUpPayload(BaseModel):
+    id: Optional[str] = None
     name: str
     grade: str
     phone: str
@@ -707,7 +708,11 @@ def signup(payload: SignUpPayload):
             conn.commit()
             return {"role": "student", "studentId": existing["id"], "name": updated_name, "token": token}
 
-        student_id = new_id("s")
+        requested_id = (payload.id or "").strip()
+        if requested_id and not cursor.execute("SELECT 1 FROM students WHERE id = ?", (requested_id,)).fetchone():
+            student_id = requested_id
+        else:
+            student_id = new_id("s")
         cursor.execute("""
         INSERT INTO students (id, name, grade, rate, phone, wa, notes, password, inviteCode, parentName, parentPhone, studentPhone)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?)
