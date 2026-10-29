@@ -1342,18 +1342,14 @@
           
           <!-- Unified Sign In -->
           <div id="paneStudentLogin">
-            <form onsubmit="handleStudentSignIn(event)" autocomplete="on">
+            <form onsubmit="handleStudentSignIn(event)" autocomplete="off">
               <div class="form-group">
                 <label class="form-label" for="studentLoginIdentifier">Name or Phone Number:</label>
-                <input type="text" id="studentLoginIdentifier" name="username" class="input-field" placeholder="E.g., Maya Ronen or 054-123-4567" autocomplete="username" required>
+                <input type="text" id="studentLoginIdentifier" class="input-field" placeholder="E.g., Maya Ronen or 054-123-4567" autocomplete="off" required>
               </div>
               <div class="form-group">
                 <label class="form-label" for="studentPassInput">Password:</label>
-                <input type="password" id="studentPassInput" name="password" class="input-field" placeholder="Your password" autocomplete="current-password" required>
-              </div>
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                <input type="checkbox" id="rememberLoginCheck" checked style="width:16px; height:16px; accent-color:var(--primary); cursor:pointer;">
-                <label for="rememberLoginCheck" style="font-size:0.82rem; color:var(--slate-600); cursor:pointer;">Remember my username &amp; password for next time</label>
+                <input type="password" id="studentPassInput" class="input-field" placeholder="Your password" autocomplete="new-password" required>
               </div>
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 4px;">
                 Sign In
@@ -1369,10 +1365,10 @@
 
           <!-- Unified Sign Up -->
           <div id="paneStudentRegister" style="display: none;">
-            <form onsubmit="handleStudentSignUp(event)" autocomplete="on">
+            <form onsubmit="handleStudentSignUp(event)" autocomplete="off">
               <div class="form-group">
                 <label class="form-label" for="regStudentName">Full Name:</label>
-                <input type="text" id="regStudentName" name="username" class="input-field" placeholder="E.g., Maya Ronen" autocomplete="username" required>
+                <input type="text" id="regStudentName" class="input-field" placeholder="E.g., Maya Ronen" autocomplete="off" required>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -1382,7 +1378,7 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="regStudentPassword">Create Password:</label>
-                  <input type="password" id="regStudentPassword" name="password" class="input-field" placeholder="Min. 4 characters" minlength="4" autocomplete="new-password" required>
+                  <input type="password" id="regStudentPassword" class="input-field" placeholder="Min. 4 characters" minlength="4" autocomplete="new-password" required>
                 </div>
               </div>
 
@@ -1393,23 +1389,18 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="regParentPhone">Parent Phone:</label>
-                  <input type="tel" id="regParentPhone" class="input-field" placeholder="E.g., 054-123-4567" autocomplete="tel" required>
+                  <input type="tel" id="regParentPhone" class="input-field" placeholder="E.g., 054-123-4567" autocomplete="off" required>
                 </div>
               </div>
 
               <div class="form-group">
                 <label class="form-label" for="regStudentPhone">Student Phone (optional):</label>
-                <input type="tel" id="regStudentPhone" class="input-field" placeholder="E.g., 052-123-4567" autocomplete="tel">
+                <input type="tel" id="regStudentPhone" class="input-field" placeholder="E.g., 052-123-4567" autocomplete="off">
               </div>
 
               <div class="form-group">
                 <label class="form-label" for="regStudentNotes">Learning Goals / Notes:</label>
                 <textarea id="regStudentNotes" class="input-field" placeholder="E.g., Preparing for high school bagrut, grammar, conversation..."></textarea>
-              </div>
-
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                <input type="checkbox" id="rememberSignUpCheck" checked style="width:16px; height:16px; accent-color:var(--primary); cursor:pointer;">
-                <label for="rememberSignUpCheck" style="font-size:0.82rem; color:var(--slate-600); cursor:pointer;">Save my username &amp; password for next time</label>
               </div>
 
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 4px;">
@@ -2347,7 +2338,7 @@
 
     function saveCredentialsForNextTime(username, password, studentProfile = null) {
       try {
-        localStorage.setItem('annette_saved_login', JSON.stringify({ username, password }));
+        localStorage.removeItem('annette_saved_login');
         if (studentProfile && studentProfile.name) {
           const accounts = loadStored('annette_saved_accounts', []);
           const normPhone = normalizePhoneForWa(studentProfile.parentPhone || studentProfile.phone || '');
@@ -2358,10 +2349,6 @@
           );
           filtered.push({ ...studentProfile, normPhone, normStuPhone });
           localStorage.setItem('annette_saved_accounts', JSON.stringify(filtered));
-        }
-        if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-          const cred = new window.PasswordCredential({ id: username, password, name: username });
-          navigator.credentials.store(cred).catch(() => {});
         }
       } catch (e) {}
     }
@@ -2379,12 +2366,11 @@
     }
 
     function prefillSavedLogin() {
-      const saved = loadStored('annette_saved_login', null);
-      if (!saved) return;
+      try { localStorage.removeItem('annette_saved_login'); } catch (e) {}
       const idInput = document.getElementById('studentLoginIdentifier');
       const passInput = document.getElementById('studentPassInput');
-      if (idInput && !idInput.value && saved.username) idInput.value = saved.username;
-      if (passInput && !passInput.value && saved.password) passInput.value = saved.password;
+      if (idInput) idInput.value = '';
+      if (passInput) passInput.value = '';
     }
 
     /* Auth Tab switcher */
