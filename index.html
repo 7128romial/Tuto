@@ -1263,6 +1263,9 @@
         <strong>Private & Confidential:</strong> You are viewing only your own appointments and private correspondence with Teacher Annette. Other students cannot see your schedule.
       </div>
 
+      <!-- Schedule Update Notification Banner -->
+      <div id="studentScheduleAlertBanner"></div>
+
       <!-- Next Scheduled Appointment Card -->
       <div id="studentNextAppointmentHero"></div>
 
@@ -1744,12 +1747,13 @@
           Pick a template, edit the text if needed, then open WhatsApp.
         </p>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
-          <span class="quick-chip" onclick="setWaTemplate('reminder')">📅 Lesson Reminder</span>
-          <span class="quick-chip" onclick="setWaTemplate('payment')">💳 Payment Notice</span>
-          <span class="quick-chip" onclick="setWaTemplate('confirm')">✓ Lesson Confirmed</span>
+          <span class="quick-chip" onclick="setWaTemplate('rescheduled')">&#x1F504; Schedule Changed</span>
+          <span class="quick-chip" onclick="setWaTemplate('reminder')">&#x1F4C5; Lesson Reminder</span>
+          <span class="quick-chip" onclick="setWaTemplate('payment')">&#x1F4B3; Payment Notice</span>
+          <span class="quick-chip" onclick="setWaTemplate('confirm')">&#x2713; Lesson Confirmed</span>
         </div>
         <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label">Send to:</label>
+          <label class="form-label">Previewing message for:</label>
           <select id="waRecipientSelect" class="input-field" onchange="updateWaRecipient()">
             <option value="student">Student</option>
             <option value="parent">Parent</option>
@@ -1757,14 +1761,22 @@
           <div id="waPhoneHint" style="font-size:0.75rem; color:var(--slate-500); margin-top:4px;"></div>
         </div>
         <div class="form-group">
-          <textarea id="waComposerText" class="input-field" style="min-height:110px;"></textarea>
+          <textarea id="waComposerText" class="input-field" style="min-height:110px;" oninput="this.dataset.customEdited='1'"></textarea>
         </div>
       </div>
-      <div class="modal-bottom">
-        <button type="button" class="btn btn-secondary" onclick="copyWaText()">Copy Text</button>
-        <a id="waSendAnchor" href="#" target="_blank" rel="noopener" onclick="handleWaSendClick(event)" class="btn btn-primary" style="background:#25d366; border-color:#25d366;">
-          Open in WhatsApp
-        </a>
+      <div class="modal-bottom" style="flex-wrap:wrap; justify-content:space-between;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copyWaText()">Copy Text</button>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a id="waSendStudentBtn" href="#" target="_blank" rel="noopener" onclick="handleWaRoleSendClick(event, 'student')" class="btn btn-primary btn-sm" style="background:#25d366; border-color:#25d366;">
+            &#x1F4F2; Notify Student
+          </a>
+          <a id="waSendParentBtn" href="#" target="_blank" rel="noopener" onclick="handleWaRoleSendClick(event, 'parent')" class="btn btn-primary btn-sm" style="background:#128c7e; border-color:#128c7e;">
+            &#x1F4F2; Notify Parent
+          </a>
+          <a id="waSendAnchor" href="#" target="_blank" rel="noopener" onclick="handleWaSendClick(event)" class="btn btn-primary btn-sm" style="display:none; background:#25d366; border-color:#25d366;">
+            Open in WhatsApp
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -1872,6 +1884,9 @@
           }
         }
 
+        if (session.role === 'student') {
+          checkNewStudentNotifications(ls, rq);
+        }
         students = st;
         lessons = ls;
         requests = rq;
@@ -2231,12 +2246,103 @@
     /* ==========================================================
        STUDENT PORTAL
        ========================================================== */
+    function checkNewStudentNotifications(newLessons, newRequests) {
+      if (!session || session.role !== 'student') return;
+      const seenKey = `annette_notified_ids_${session.studentId}`;
+      const seenIds = new Set(loadStored(seenKey, []));
+      const isFirstLoad = seenIds.size === 0 && requests.length === 0;
+
+      let latestUpdate = null;
+      for (const r of newRequests) {
+        const key = `${r.id}_${r.status}_${r.teacherReplyDate || ''}`;
+        if (!seenIds.has(key)) {
+          seenIds.add(key);
+          if (!isFirstLoad && (r.requestType === 'Schedule Update' || r.teacherReply)) {
+            latestUpdate = r;
+          }
+        }
+      }
+      try { localStorage.setItem(seenKey, JSON.stringify([...seenIds])); } catch (e) {}
+
+      if (latestUpdate) {
+        const msg = latestUpdate.teacherReply || 'Teacher Annette updated your lesson schedule.';
+        triggerToast(msg);
+        if (latestUpdate.lessonId) {
+          const updatedLesson = newLessons.find(l => l.id === latestUpdate.lessonId);
+          if (updatedLesson && updatedLesson.date) {
+            jumpToLessonDate(updatedLesson.date, false);
+          }
+        }
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try { new Notification("Annette's Private Lessons", { body: msg }); } catch (e) {}
+        }
+      }
+    }
+
+    function jumpToLessonDate(isoDate, shouldRefresh = true) {
+      if (!isoDate) return;
+      const target = new Date(`${isoDate}T00:00:00`);
+      if (Number.isNaN(target.getTime())) return;
+      const targetSun = new Date(target.getFullYear(), target.getMonth(), target.getDate() - target.getDay());
+      weekOffset = Math.round((targetSun - getBaseWeekSunday()) / (7 * 86400000));
+      if (shouldRefresh) refreshUI();
+    }
+
+    function dismissScheduleUpdate(reqId) {
+      if (!session || !session.studentId) return;
+      const key = `annette_dismissed_updates_${session.studentId}`;
+      const dismissed = new Set(loadStored(key, []));
+      dismissed.add(reqId);
+      try { localStorage.setItem(key, JSON.stringify([...dismissed])); } catch (e) {}
+      refreshUI();
+    }
+
     function renderStudentPortal(week, student) {
       if (!student) return;
-      document.getElementById('studentGreetingTitle').textContent = `Hello, ${student.name}! 👋`;
+      document.getElementById('studentGreetingTitle').textContent = `Hello, ${student.name}! \u{1F44B}`;
+      if ('Notification' in window && Notification.permission === 'default') {
+        try { Notification.requestPermission(); } catch (e) {}
+      }
 
       const myLessonsThisWeek = lessonsInWeek(week).filter(l => l.studentId === student.id);
       const myUpcoming = upcomingLessons(student.id);
+
+      const dismissedIds = new Set(loadStored(`annette_dismissed_updates_${student.id}`, []));
+      const activeUpdates = requests.filter(r => r.studentId === student.id && r.requestType === 'Schedule Update' && !dismissedIds.has(r.id));
+      const alertBanner = document.getElementById('studentScheduleAlertBanner');
+      if (alertBanner) {
+        if (activeUpdates.length > 0) {
+          const latest = activeUpdates[0];
+          const linkedLesson = latest.lessonId ? lessons.find(l => l.id === latest.lessonId) : null;
+          alertBanner.innerHTML = `
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-left:4px solid var(--amber-500); border-radius:var(--radius-md); padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; box-shadow:var(--shadow-subtle);">
+              <div>
+                <div style="font-size:0.8rem; font-weight:800; color:var(--amber-700); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
+                  &#x1F514; Schedule Update from Teacher Annette
+                </div>
+                <div style="font-size:0.95rem; font-weight:700; color:var(--slate-900);">
+                  ${esc(latest.teacherReply)}
+                </div>
+                <div style="font-size:0.75rem; color:var(--slate-500); margin-top:2px;">
+                  Updated ${new Date(latest.dateSubmitted).toLocaleString()}
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                ${linkedLesson && linkedLesson.date ? `
+                  <button class="btn btn-primary btn-sm" onclick="jumpToLessonDate('${esc(linkedLesson.date)}')">
+                    &#x1F4C5; View in Calendar
+                  </button>
+                ` : ''}
+                <button class="btn btn-secondary btn-sm" onclick="dismissScheduleUpdate('${esc(latest.id)}')">
+                  Got it &#x2713;
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          alertBanner.innerHTML = '';
+        }
+      }
 
       const heroContainer = document.getElementById('studentNextAppointmentHero');
       if (myUpcoming.length > 0) {
@@ -2711,14 +2817,17 @@
         return;
       }
 
+      const previousSnapshot = { ...lesson };
       Object.assign(lesson, updated);
       if (!(await syncLesson(lesson))) return;
 
       const typed = document.getElementById(`tReplyInput_${reqId}`).value.trim();
-      const reply = typed || `Approved! Your lesson is now on ${formatDate(newDate)} at ${newStart}–${newEnd}.`;
+      const reply = typed || `Approved! Your lesson is now on ${formatDate(newDate)} at ${newStart}-${newEnd}.`;
       await sendReply(reqId, reply);
-      triggerToast('Lesson moved and student notified.');
+      await loadFromBackend();
+      triggerToast('Lesson moved and student dashboard updated!');
       refreshUI();
+      openScheduleChangeWaModal(lesson, previousSnapshot);
     }
 
     function updateLocalReq(reqId, text) {
@@ -2847,37 +2956,107 @@
       return normalizePhoneForWa(preferred);
     }
 
+    function buildWaMessageForRole(type, senderType) {
+      if (!activeWaContext) return '';
+      const { lesson, previousLesson, student } = activeWaContext;
+      const studentName = (student && student.name) || (lesson && lesson.studentName) || 'there';
+      const toParent = senderType === 'parent';
+      const greetingName = toParent ? (student && student.parentName ? student.parentName : `Parent of ${studentName}`) : studentName;
+      const whose = toParent ? `${studentName}'s` : 'our';
+
+      if (!lesson) {
+        return `Hi ${greetingName}! This is Teacher Annette.`;
+      }
+      if (type === 'rescheduled') {
+        if (lesson.status === 'Cancelled') {
+          const oldPart = previousLesson ? `${formatDate(previousLesson.date)} at ${previousLesson.startTime}` : `${formatDate(lesson.date)} at ${lesson.startTime}`;
+          return `Hi ${greetingName}! This is Teacher Annette. Please note that ${whose} English lesson on ${oldPart} has been cancelled and updated in the schedule.`;
+        }
+        if (previousLesson && (previousLesson.date !== lesson.date || previousLesson.startTime !== lesson.startTime || previousLesson.endTime !== lesson.endTime)) {
+          return `Hi ${greetingName}! This is Teacher Annette. I updated ${whose} English lesson from ${formatDate(previousLesson.date)} at ${previousLesson.startTime} to ${formatDate(lesson.date)} at ${lesson.startTime}-${lesson.endTime}. The schedule in the student portal has been updated automatically. See you then!`;
+        }
+        return `Hi ${greetingName}! This is Teacher Annette. ${toParent ? `${studentName}'s` : 'Your'} English lesson is now scheduled for ${formatDate(lesson.date)} at ${lesson.startTime}-${lesson.endTime}. See you then!`;
+      }
+      if (type === 'reminder') {
+        return `Hi ${greetingName}! This is Teacher Annette. A reminder about ${whose} English lesson on ${formatDate(lesson.date)} at ${lesson.startTime}. See you then!`;
+      }
+      if (type === 'payment') {
+        return `Hi ${greetingName}! This is Teacher Annette. A gentle reminder about payment for ${whose} lesson on ${formatDate(lesson.date)}: \u20AA${lesson.rate} via ${lesson.method || 'Bit'}. Thank you!`;
+      }
+      return `Hi ${greetingName}! ${toParent ? `${studentName}'s` : 'Your'} lesson on ${formatDate(lesson.date)} at ${lesson.startTime} is confirmed. See you soon! Teacher Annette`;
+    }
+
     function setWaTemplate(type) {
       if (!activeWaContext) return;
-      const { lesson, student } = activeWaContext;
-      const studentName = student ? student.name : 'there';
+      const { student } = activeWaContext;
       const senderType = document.getElementById('waRecipientSelect').value;
-      const toParent = senderType === 'parent';
-      const greetingName = toParent ? (student && student.parentName ? student.parentName : 'there') : studentName;
-      const whose = toParent ? `${studentName}'s` : 'our';
-      const phone = getWaContactPhone(student, senderType);
-
-      let text = '';
-      if (!lesson) {
-        text = `Hi ${greetingName}! This is Teacher Annette.`;
-      } else if (type === 'reminder') {
-        text = `Hi ${greetingName}! This is Teacher Annette. A reminder about ${whose} English lesson on ${formatDate(lesson.date)} at ${lesson.startTime}. See you then!`;
-      } else if (type === 'payment') {
-        text = `Hi ${greetingName}! This is Teacher Annette. A gentle reminder about payment for ${whose} lesson on ${formatDate(lesson.date)}: ₪${lesson.rate} via ${lesson.method || 'Bit'}. Thank you!`;
-      } else {
-        text = `Hi ${greetingName}! ${toParent ? `${studentName}'s` : 'Your'} lesson on ${formatDate(lesson.date)} at ${lesson.startTime} is confirmed. See you soon! Teacher Annette`;
-      }
+      const text = buildWaMessageForRole(type, senderType);
 
       const composer = document.getElementById('waComposerText');
       composer.dataset.template = type;
+      delete composer.dataset.customEdited;
       composer.value = text;
 
+      const studentPhone = normalizePhoneForWa(student ? (student.studentPhone || '') : '');
+      const parentPhone = normalizePhoneForWa(student ? (student.parentPhone || student.phone || student.wa || '') : '');
+      const fallbackPhone = studentPhone || parentPhone;
+
+      const stuBtn = document.getElementById('waSendStudentBtn');
+      const parBtn = document.getElementById('waSendParentBtn');
+      if (stuBtn) {
+        stuBtn.dataset.phone = studentPhone || fallbackPhone;
+        const stuText = buildWaMessageForRole(type, 'student');
+        stuBtn.href = (studentPhone || fallbackPhone) ? `https://api.whatsapp.com/send?phone=${studentPhone || fallbackPhone}&text=${encodeURIComponent(stuText)}` : '#';
+      }
+      if (parBtn) {
+        parBtn.dataset.phone = parentPhone || fallbackPhone;
+        const parText = buildWaMessageForRole(type, 'parent');
+        parBtn.href = (parentPhone || fallbackPhone) ? `https://api.whatsapp.com/send?phone=${parentPhone || fallbackPhone}&text=${encodeURIComponent(parText)}` : '#';
+      }
+
+      const activePhone = getWaContactPhone(student, senderType);
       const anchor = document.getElementById('waSendAnchor');
-      anchor.dataset.phone = phone;
-      anchor.href = phone ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}` : '#';
-      document.getElementById('waPhoneHint').textContent = phone
-        ? `Sending to +${phone}`
-        : `No ${toParent ? 'parent' : 'student'} phone number saved. Edit the student profile to add one.`;
+      anchor.dataset.phone = activePhone;
+      anchor.href = activePhone ? `https://api.whatsapp.com/send?phone=${activePhone}&text=${encodeURIComponent(text)}` : '#';
+
+      const hints = [];
+      if (studentPhone) hints.push(`Student: +${studentPhone}`);
+      if (parentPhone) hints.push(`Parent: +${parentPhone}`);
+      document.getElementById('waPhoneHint').textContent = hints.length > 0
+        ? hints.join(' · ')
+        : 'No phone number saved yet. Edit the student profile to add student/parent numbers.';
+    }
+
+    function handleWaRoleSendClick(e, role) {
+      if (!activeWaContext) return;
+      const { student } = activeWaContext;
+      const phone = role === 'parent'
+        ? normalizePhoneForWa(student ? (student.parentPhone || student.phone || student.wa || student.studentPhone || '') : '')
+        : normalizePhoneForWa(student ? (student.studentPhone || student.parentPhone || student.phone || student.wa || '') : '');
+      if (!phone) {
+        e.preventDefault();
+        alert(`No WhatsApp phone number is saved for the ${role}. Please edit the student's profile to add one.`);
+        return;
+      }
+      const composer = document.getElementById('waComposerText');
+      const currentSelect = document.getElementById('waRecipientSelect').value;
+      const template = composer.dataset.template || 'confirm';
+      let text = composer.value;
+      if (!composer.dataset.customEdited || currentSelect !== role) {
+        document.getElementById('waRecipientSelect').value = role;
+        text = buildWaMessageForRole(template, role);
+        composer.value = text;
+      }
+      e.currentTarget.href = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+    }
+
+    function openScheduleChangeWaModal(updatedLesson, previousLesson) {
+      if (!updatedLesson) return;
+      const student = students.find(s => s.id === updatedLesson.studentId) || { name: updatedLesson.studentName };
+      activeWaContext = { lesson: updatedLesson, previousLesson, student };
+      document.getElementById('waRecipientSelect').value = (student && student.studentPhone) ? 'student' : 'parent';
+      setWaTemplate('rescheduled');
+      openModal('waModal');
     }
 
     function handleWaSendClick(e) {
@@ -2887,7 +3066,6 @@
         alert('No WhatsApp number was found for this contact. Please add a parent or student phone number first.');
         return;
       }
-      // Use the text as edited in the box, not only the template.
       const text = document.getElementById('waComposerText').value;
       anchor.href = `https://api.whatsapp.com/send?phone=${anchor.dataset.phone}&text=${encodeURIComponent(text)}`;
     }
@@ -3262,8 +3440,13 @@
         return;
       }
 
+      const previousSnapshot = { ...lesson };
       Object.assign(lesson, moved);
-      if (await syncLesson(lesson)) triggerToast(`Lesson moved to ${moved.day}.`);
+      if (await syncLesson(lesson)) {
+        await loadFromBackend();
+        triggerToast(`Lesson moved to ${moved.day}. Student dashboard updated!`);
+        openScheduleChangeWaModal(lesson, previousSnapshot);
+      }
       refreshUI();
     }
 
@@ -3361,6 +3544,16 @@
         return;
       }
 
+      const previousSnapshot = existing ? { ...existing } : null;
+      const scheduleModified = Boolean(
+        previousSnapshot && (
+          previousSnapshot.date !== data.date ||
+          previousSnapshot.startTime !== data.startTime ||
+          previousSnapshot.endTime !== data.endTime ||
+          (previousSnapshot.status !== 'Cancelled' && data.status === 'Cancelled')
+        )
+      );
+
       try {
         await api('POST', '/lessons', data);
       } catch (err) {
@@ -3376,8 +3569,14 @@
       const target = new Date(`${data.date}T00:00:00`);
       const targetSun = new Date(target.getFullYear(), target.getMonth(), target.getDate() - target.getDay());
       weekOffset = Math.round((targetSun - getBaseWeekSunday()) / (7 * 86400000));
+      await loadFromBackend();
       refreshUI();
-      triggerToast('Lesson saved.');
+      if (scheduleModified) {
+        triggerToast('Schedule updated in student portal! Send WhatsApp notification below.');
+        openScheduleChangeWaModal(data, previousSnapshot);
+      } else {
+        triggerToast('Lesson saved.');
+      }
     }
 
     function saveLocalLesson(editId, data) {
@@ -3598,7 +3797,12 @@
         if (!document.hidden && isBackendActive && session && session.token) {
           loadFromBackend();
         }
-      }, 25000);
+      }, 10000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && isBackendActive && session && session.token) {
+          loadFromBackend();
+        }
+      });
     });
 
     // Close pop-up windows with Escape or by clicking outside them.

@@ -838,7 +838,7 @@ def save_lesson(lesson: LessonPayload, session: dict = Depends(require_teacher))
         lid = lesson.id or new_id("l")
 
         # Past dates are allowed only when an existing lesson keeps its date (e.g. marking it paid).
-        existing = cursor.execute("SELECT date FROM lessons WHERE id = ?", (lid,)).fetchone()
+        existing = cursor.execute("SELECT * FROM lessons WHERE id = ?", (lid,)).fetchone()
         date_unchanged = existing is not None and existing["date"] == lesson.date
         if lesson_date < min_allowed_date() and not date_unchanged:
             raise HTTPException(status_code=400, detail="You cannot schedule a lesson in the past.")
@@ -858,9 +858,34 @@ def save_lesson(lesson: LessonPayload, session: dict = Depends(require_teacher))
         INSERT OR REPLACE INTO lessons (id, studentId, studentName, weekId, day, date, startTime, endTime, rate, payment, method, status, topic, location)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (lid, lesson.studentId, lesson.studentName, computed_week_id, computed_day, lesson.date, lesson.startTime, lesson.endTime, lesson.rate, lesson.payment, lesson.method, lesson.status, lesson.topic, lesson.location))
-        
+
+        schedule_changed = False
+        if existing is not None:
+            old_status = existing["status"] or "Confirmed"
+            new_status = lesson.status or "Confirmed"
+            time_changed = (
+                existing["date"] != lesson.date
+                or existing["startTime"] != lesson.startTime
+                or existing["endTime"] != lesson.endTime
+            )
+            cancelled_now = (old_status != "Cancelled" and new_status == "Cancelled")
+            if time_changed or cancelled_now:
+                schedule_changed = True
+                now_iso = utc_now_iso()
+                old_summary = f"{existing['day']} ({existing['date']}) at {existing['startTime']}-{existing['endTime']}"
+                new_summary = f"{computed_day} ({lesson.date}) at {lesson.startTime}-{lesson.endTime}"
+                if cancelled_now:
+                    reply_msg = f"Lesson on {old_summary} was cancelled by Teacher Annette."
+                else:
+                    reply_msg = f"Your lesson was moved from {old_summary} to {new_summary}."
+                cursor.execute("""
+                INSERT INTO requests (id, studentId, studentName, lessonId, lessonSummary, requestType, message, dateSubmitted, status, teacherReply, teacherReplyDate)
+                VALUES (?, ?, ?, ?, ?, 'Schedule Update', ?, ?, 'Answered', ?, ?)
+                """, (new_id("upd"), lesson.studentId, lesson.studentName, lid, f"{computed_day} {lesson.date} @ {lesson.startTime}",
+                      f"Previous schedule: {old_summary}", now_iso, reply_msg, now_iso))
+
         conn.commit()
-        return {"id": lid, "status": "saved"}
+        return {"id": lid, "status": "saved", "scheduleChanged": schedule_changed}
     finally:
         conn.close()
 
