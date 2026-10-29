@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Annette Studio">
   <meta name="theme-color" content="#ffffff">
   <title>Annette's Private Lessons</title>
   <link rel="icon" href="data:,">
@@ -1922,8 +1919,9 @@
 
   <!-- Application Logic -->
   <script>
-    /* Clean Production State (No Dummy Data) */
-    let session = loadStored('annette_session', null);
+    /* Clean Production State (Always require Login first when opening a link) */
+    localStorage.removeItem('annette_session');
+    let session = null;
     let studioBackup = loadStored('annette_studio_backup', { students: [], lessons: [], requests: [], deletedStudentIds: [], deletedLessonIds: [] });
     let students = (session && session.role === 'teacher' && Array.isArray(studioBackup.students)) ? studioBackup.students : [];
     let lessons = (session && session.role === 'teacher' && Array.isArray(studioBackup.lessons)) ? studioBackup.lessons : [];
@@ -3596,19 +3594,22 @@
     }
 
     async function applyInviteFromUrl() {
-      if (session) return;
+      if (session) {
+        clearSession();
+      }
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
       const isGeneralSignup = params.get('signup');
       if (!inviteCode && !isGeneralSignup) return;
 
-      switchAuthTab('studentRegister');
       if (!inviteCode) {
         window.history.replaceState({}, '', window.location.pathname);
-        setTimeout(() => document.getElementById('regStudentName')?.focus(), 50);
-        triggerToast("Welcome! Fill in your details below to sign up for Teacher Annette's lessons.");
+        switchAuthTab('studentLogin');
+        prefillSavedLogin();
+        triggerToast("Welcome! Please sign in below, or tap 'Sign Up' if you are a new student.");
         return;
       }
+      switchAuthTab('studentRegister');
       let student;
       try {
         student = await api('GET', `/invite/${encodeURIComponent(inviteCode)}`);
