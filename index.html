@@ -1774,10 +1774,11 @@
     let activeWaContext = null;
     let activeTeacherTab = 'schedule';
 
-    // Use current real date as reference
-    const now = new Date();
-    const currentDayOfWeek = now.getDay(); // 0 is Sunday
-    const BASE_WEEK_SUNDAY = new Date(now.getFullYear(), now.getMonth(), now.getDate() - currentDayOfWeek);
+    // Dynamically compute current week's Sunday so long-open tabs stay accurate across midnight
+    function getBaseWeekSunday() {
+      const current = new Date();
+      return new Date(current.getFullYear(), current.getMonth(), current.getDate() - current.getDay());
+    }
 
     let isBackendActive = false;
     const API_BASE = (window.location.protocol.startsWith('http')) ? '/api' : 'http://127.0.0.1:8000/api';
@@ -1930,8 +1931,16 @@
     }
 
     function upcomingLessons(studentId) {
-      const today = todayIso();
-      return sortLessons(lessons.filter(l => l.studentId === studentId && l.date >= today && l.status !== 'Cancelled'));
+      const current = new Date();
+      const today = toIsoDate(current);
+      const currentMins = current.getHours() * 60 + current.getMinutes();
+      return sortLessons(lessons.filter(l => {
+        if (l.studentId !== studentId) return false;
+        if (l.status === 'Cancelled' || l.status === 'Completed') return false;
+        if (l.date < today) return false;
+        if (l.date === today && timeToMinutes(l.endTime) <= currentMins) return false;
+        return true;
+      }));
     }
 
     function lessonDurationLabel(l) {
@@ -1961,8 +1970,9 @@
     }
 
     function getWeekData(offset = 0) {
-      const sun = new Date(BASE_WEEK_SUNDAY);
+      const sun = getBaseWeekSunday();
       sun.setDate(sun.getDate() + (offset * 7));
+      const todayStr = todayIso();
 
       const days = [];
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -1973,13 +1983,13 @@
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
-        
-        const isCurrentDay = (d.toDateString() === now.toDateString());
+        const isoDate = `${yyyy}-${mm}-${dd}`;
+
         days.push({
           dayName: dayNames[i],
-          isoDate: `${yyyy}-${mm}-${dd}`,
+          isoDate,
           displayDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          isToday: isCurrentDay
+          isToday: isoDate === todayStr
         });
       }
 
@@ -1988,9 +1998,10 @@
 
       const label = `${sun.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${sat.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
       
-      // Calculate week identifier
+      // Calculate week identifier (Math.round avoids DST 1-hour drift)
       const oneJan = new Date(sun.getFullYear(), 0, 1);
-      const weekNum = Math.ceil((((sun - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
+      const daysSinceJan1 = Math.round((sun - oneJan) / 86400000);
+      const weekNum = Math.ceil((daysSinceJan1 + oneJan.getDay() + 1) / 7);
       const weekId = `${sun.getFullYear()}-W${weekNum}`;
 
       return { sun, sat, label, days, weekId };
@@ -2284,7 +2295,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; gap:8px; flex-wrap:wrap;">
               <div>
                 <span class="badge ${r.status === 'Pending' ? 'badge-unpaid' : 'badge-paid'}">${r.status === 'Pending' ? 'Waiting for answer' : 'Answered'}</span>
-                <strong style="margin-left: 8px; font-size: 0.92rem;">${esc(r.requestType)} · ${esc(r.lessonSummary || 'General')}</strong>
+                <strong style="margin-left: 8px; font-size: 0.92rem;">${esc(r.requestType)} · ${(() => { const l = r.lessonId ? lessons.find(x => x.id === r.lessonId) : null; return l ? `${formatDate(l.date)} at ${esc(l.startTime)}` : esc(r.lessonSummary || 'General'); })()}</strong>
               </div>
               <span style="font-size: 0.75rem; color: var(--slate-400);">${new Date(r.dateSubmitted).toLocaleDateString()}</span>
             </div>
@@ -2673,7 +2684,8 @@
       const sun = new Date(date);
       sun.setDate(date.getDate() - date.getDay());
       const oneJan = new Date(sun.getFullYear(), 0, 1);
-      const weekNum = Math.ceil((((sun - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
+      const daysSinceJan1 = Math.round((sun - oneJan) / 86400000);
+      const weekNum = Math.ceil((daysSinceJan1 + oneJan.getDay() + 1) / 7);
       return `${sun.getFullYear()}-W${weekNum}`;
     }
 
@@ -3257,7 +3269,8 @@
 
       // Jump to the week of the saved lesson so the teacher sees it.
       const target = new Date(`${data.date}T00:00:00`);
-      weekOffset = Math.round((target - BASE_WEEK_SUNDAY) / (7 * 86400000) - target.getDay() / 7);
+      const targetSun = new Date(target.getFullYear(), target.getMonth(), target.getDate() - target.getDay());
+      weekOffset = Math.round((targetSun - getBaseWeekSunday()) / (7 * 86400000));
       refreshUI();
       triggerToast('Lesson saved.');
     }

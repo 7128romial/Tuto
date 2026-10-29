@@ -35,4 +35,4 @@ Render's free plan erases that file on every deploy and restart, so the live sit
 3. In the Render dashboard, open the service, go to Environment, and add `DATABASE_URL` with that connection string.
 4. Save. Render redeploys, and the server creates the tables on first start.
 
-Data in the old `tutoring.db` file is not moved. To keep it, download a backup from the Backup tab before you switch, then restore it after.
+Data in the old `tutoring.db` file is not moved. To keep it, download a backup from the Settings tab before you switch, then restore it after.
