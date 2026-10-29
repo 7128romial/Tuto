@@ -1121,7 +1121,13 @@
       </div>
 
       <!-- Action buttons visible in teacher view -->
-      <div id="teacherActionButtons" style="display: none; gap: 10px;">
+      <div id="teacherActionButtons" style="display: none; gap: 10px; flex-wrap: wrap;">
+        <a class="btn btn-sm" href="#" target="_blank" rel="noopener" onclick="shareGeneralInviteWa(event)" style="background: #25d366; color: white; border-color: #25d366;">
+          &#x1F4AC; Invite Student on WhatsApp
+        </a>
+        <button class="btn btn-secondary btn-sm" onclick="copyGeneralInviteLink()">
+          &#x1F517; Copy Sign-Up Link
+        </button>
         <button class="btn btn-secondary btn-sm" onclick="duplicateCurrentWeek()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           Copy Week to Next
@@ -1499,12 +1505,20 @@
             <div>
               <div class="panel-title">Registered Students</div>
               <p style="font-size: 0.8rem; color: var(--slate-500); margin-top: 2px;">
-                Manage student profiles, parent contacts, WhatsApp quick links, and hourly pricing.
+                Share the WhatsApp invite link so students can sign up on their own, or add them manually below.
               </p>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openStudentModal()">
-              + Add Student
-            </button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <a class="btn btn-sm" href="#" target="_blank" rel="noopener" onclick="shareGeneralInviteWa(event)" style="background: #25d366; color: white; border-color: #25d366;">
+                &#x1F4AC; Invite Student on WhatsApp
+              </a>
+              <button class="btn btn-secondary btn-sm" onclick="copyGeneralInviteLink()">
+                &#x1F517; Copy Sign-Up Link
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="openStudentModal()">
+                + Add Student
+              </button>
+            </div>
           </div>
 
           <div class="table-container">
@@ -1764,12 +1778,13 @@
   <!-- Application Logic -->
   <script>
     /* Clean Production State (No Dummy Data) */
-    let students = [];
-    let lessons = [];
-    let requests = [];
     let session = loadStored('annette_session', null);
-    // Remove data cached by older versions of this page.
-    try { ['annette_students', 'annette_lessons', 'annette_requests', 'annette_teacher_accounts'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    let studioBackup = loadStored('annette_studio_backup', { students: [], lessons: [], requests: [], deletedStudentIds: [], deletedLessonIds: [] });
+    let students = (session && session.role === 'teacher' && Array.isArray(studioBackup.students)) ? studioBackup.students : [];
+    let lessons = (session && session.role === 'teacher' && Array.isArray(studioBackup.lessons)) ? studioBackup.lessons : [];
+    let requests = (session && session.role === 'teacher' && Array.isArray(studioBackup.requests)) ? studioBackup.requests : [];
+    let deletedStudentIds = new Set(Array.isArray(studioBackup.deletedStudentIds) ? studioBackup.deletedStudentIds : []);
+    let deletedLessonIds = new Set(Array.isArray(studioBackup.deletedLessonIds) ? studioBackup.deletedLessonIds : []);
     let weekOffset = 0;
     let activeWaContext = null;
     let activeTeacherTab = 'schedule';
@@ -1823,24 +1838,62 @@
     async function loadFromBackend() {
       if (!isBackendActive || !session || !session.token) return;
       try {
-        const [st, ls, rq] = await Promise.all([
+        let [st, ls, rq] = await Promise.all([
           api('GET', '/students'),
           api('GET', '/lessons'),
           api('GET', '/requests')
         ]);
+
+        // If the hosting server restarted and wiped its local file, automatically restore any cached
+        // teacher records that were not explicitly deleted.
+        if (session.role === 'teacher') {
+          const cached = loadStored('annette_studio_backup', null);
+          if (cached) {
+            const stIds = new Set(st.map(x => x.id));
+            const lsIds = new Set(ls.map(x => x.id));
+            const rqIds = new Set(rq.map(x => x.id));
+            const missingStudents = (cached.students || []).filter(x => x.id && !stIds.has(x.id) && !deletedStudentIds.has(x.id));
+            const missingLessons = (cached.lessons || []).filter(x => x.id && !lsIds.has(x.id) && !deletedLessonIds.has(x.id) && !deletedStudentIds.has(x.studentId));
+            const missingRequests = (cached.requests || []).filter(x => x.id && !rqIds.has(x.id) && !deletedStudentIds.has(x.studentId));
+
+            if (missingStudents.length > 0 || missingLessons.length > 0 || missingRequests.length > 0) {
+              const allStudentsForImport = [...st, ...missingStudents];
+              await api('POST', '/backup/import', {
+                students: allStudentsForImport,
+                lessons: missingLessons,
+                requests: missingRequests
+              });
+              [st, ls, rq] = await Promise.all([
+                api('GET', '/students'),
+                api('GET', '/lessons'),
+                api('GET', '/requests')
+              ]);
+            }
+          }
+        }
+
         students = st;
         lessons = ls;
         requests = rq;
+        persistData();
         refreshUI();
       } catch (err) {
         console.warn('Backend sync error:', err);
       }
     }
 
-    // Only the sign-in token is kept in the browser. Lesson and student data stay on the server.
     function persistData() {
       try {
         localStorage.setItem('annette_session', JSON.stringify(session));
+        if (session && session.role === 'teacher') {
+          localStorage.setItem('annette_studio_backup', JSON.stringify({
+            students,
+            lessons,
+            requests,
+            deletedStudentIds: [...deletedStudentIds],
+            deletedLessonIds: [...deletedLessonIds]
+          }));
+        }
       } catch (e) {
         console.warn('Could not save to browser storage:', e);
       }
@@ -2110,6 +2163,7 @@
       if (tab === 'requests') renderTeacherRequests();
       if (tab === 'payments') renderPaymentLedger();
       if (tab === 'roster') renderStudentRoster();
+      loadFromBackend();
     }
 
     /* ==========================================================
@@ -2982,13 +3036,49 @@
       return url;
     }
 
+    function getGeneralSignupLink() {
+      const base = window.location.origin + window.location.pathname;
+      return `${base}?signup=1`;
+    }
+
+    function shareGeneralInviteWa(e) {
+      const link = getGeneralSignupLink();
+      const message = `Hi! This is Teacher Annette \u{1F44B} Please use this link to sign up for your private English lessons: ${link}`;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+      if (e && e.currentTarget) {
+        e.currentTarget.href = url;
+      } else {
+        window.open(url, '_blank', 'noopener');
+      }
+      triggerToast('Opening WhatsApp to share sign-up link...');
+      return url;
+    }
+
+    async function copyGeneralInviteLink() {
+      const link = getGeneralSignupLink();
+      try {
+        await navigator.clipboard.writeText(link);
+        triggerToast('Student sign-up link copied!');
+      } catch (err) {
+        window.prompt('Copy this student sign-up link:', link);
+      }
+      return link;
+    }
+
     async function applyInviteFromUrl() {
       if (session) return;
       const params = new URLSearchParams(window.location.search);
       const inviteCode = params.get('invite');
-      if (!inviteCode) return;
+      const isGeneralSignup = params.get('signup');
+      if (!inviteCode && !isGeneralSignup) return;
 
       switchAuthTab('studentRegister');
+      if (!inviteCode) {
+        window.history.replaceState({}, '', window.location.pathname);
+        setTimeout(() => document.getElementById('regStudentName')?.focus(), 50);
+        triggerToast("Welcome! Fill in your details below to sign up for Teacher Annette's lessons.");
+        return;
+      }
       let student;
       try {
         student = await api('GET', `/invite/${encodeURIComponent(inviteCode)}`);
@@ -3039,6 +3129,7 @@
       }
     
 
+      deletedStudentIds.add(studentId);
       students = students.filter(s => s.id !== studentId);
       lessons = lessons.filter(l => l.studentId !== studentId);
       requests = requests.filter(r => r.studentId !== studentId);
@@ -3117,6 +3208,7 @@
         return;
       }
     
+      deletedLessonIds.add(id);
       lessons = lessons.filter(l => l.id !== id);
       persistData();
       closeModal('lessonModal');
@@ -3502,6 +3594,11 @@
       refreshUI();
       await checkBackendConnection();
       await applyInviteFromUrl();
+      setInterval(() => {
+        if (!document.hidden && isBackendActive && session && session.token) {
+          loadFromBackend();
+        }
+      }, 25000);
     });
 
     // Close pop-up windows with Escape or by clicking outside them.

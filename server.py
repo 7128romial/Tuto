@@ -8,6 +8,8 @@ import uuid
 import hashlib
 import hmac
 import secrets
+import base64
+import json
 from datetime import datetime, date, timedelta, timezone
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, Header
@@ -177,12 +179,42 @@ def record_failed_login(identifier):
     prune_failed_logins(now)
     failed_logins.setdefault(identifier, []).append(now)
 
+SESSION_SECRET = hashlib.sha256(f"tuto_session:{TEACHER_USERNAME}:{TEACHER_PASSWORD or 'annette123'}".encode()).digest()
+revoked_tokens = set()
+
 def create_session(cursor, role, user_id, name):
-    token = secrets.token_urlsafe(32)
-    cursor.execute("DELETE FROM sessions WHERE createdAt < ?", (time.time() - SESSION_DAYS * 86400,))
+    now_ts = time.time()
+    payload_obj = {"r": role, "u": user_id, "n": name, "t": int(now_ts), "j": secrets.token_hex(6)}
+    payload_b64 = base64.urlsafe_b64encode(json.dumps(payload_obj, separators=(",", ":")).encode()).decode().rstrip("=")
+    sig = hmac.new(SESSION_SECRET, payload_b64.encode(), hashlib.sha256).hexdigest()
+    token = f"{payload_b64}.{sig}"
+    cursor.execute("DELETE FROM sessions WHERE createdAt < ?", (now_ts - SESSION_DAYS * 86400,))
     cursor.execute("INSERT INTO sessions (token, role, userId, name, createdAt) VALUES (?, ?, ?, ?, ?)",
-                   (token_key(token), role, user_id, name, time.time()))
+                   (token_key(token), role, user_id, name, now_ts))
     return token
+
+def verify_signed_token(token: str):
+    if "." not in token or token_key(token) in revoked_tokens:
+        return None
+    payload_b64, sig = token.rsplit(".", 1)
+    expected_sig = hmac.new(SESSION_SECRET, payload_b64.encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        return None
+    try:
+        padding = "=" * (-len(payload_b64) % 4)
+        data = json.loads(base64.urlsafe_b64decode((payload_b64 + padding).encode()).decode())
+        created_at = float(data["t"])
+        if created_at < time.time() - SESSION_DAYS * 86400:
+            return None
+        return {
+            "token": token_key(token),
+            "role": data["r"],
+            "userId": data["u"],
+            "name": data.get("n") or "",
+            "createdAt": created_at,
+        }
+    except Exception:
+        return None
 
 def get_session(authorization: Optional[str] = Header(None)):
     token = ""
@@ -193,6 +225,15 @@ def get_session(authorization: Optional[str] = Header(None)):
     conn = get_db()
     try:
         row = conn.execute("SELECT * FROM sessions WHERE token = ?", (token_key(token),)).fetchone()
+        if not row:
+            recovered = verify_signed_token(token)
+            if recovered:
+                conn.execute(
+                    "INSERT OR REPLACE INTO sessions (token, role, userId, name, createdAt) VALUES (?, ?, ?, ?, ?)",
+                    (recovered["token"], recovered["role"], recovered["userId"], recovered["name"], recovered["createdAt"])
+                )
+                conn.commit()
+                return recovered
     finally:
         conn.close()
     if not row or row["createdAt"] < time.time() - SESSION_DAYS * 86400:
@@ -566,9 +607,11 @@ def login(payload: LoginPayload):
 @app.post("/api/auth/logout")
 def logout(authorization: Optional[str] = Header(None)):
     if authorization and authorization.lower().startswith("bearer "):
+        t_hash = token_key(authorization[7:].strip())
+        revoked_tokens.add(t_hash)
         conn = get_db()
         try:
-            conn.execute("DELETE FROM sessions WHERE token = ?", (token_key(authorization[7:].strip()),))
+            conn.execute("DELETE FROM sessions WHERE token = ?", (t_hash,))
             conn.commit()
         finally:
             conn.close()
